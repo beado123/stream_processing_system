@@ -16,14 +16,14 @@ func NewTopologyBuilder() (tb *TopologyBuilder) {
 /**
  * add spout to topology
  */
-func (self *TopologyBuilder) SetSpout(id string, s Spout, amountOfParallelism int) {
+func (self *TopologyBuilder) SetSpout(id string, s Spout, numOfTask int) {
 	
 }
 
 /**
  * add bolt to topology
  */
-func (self *TopologyBuilder) SetBolt(id string, b Bolt, amountOfParallelism int) {
+func (self *TopologyBuilder) SetBolt(id string, b Bolt, numOfTask int) {
 
 }
 
