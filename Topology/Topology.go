@@ -10,6 +10,14 @@ func NewTopology() (t *Topology) {
 	}
 }
 
+/**
+ * Add new record in topology
+ * @param record TopologyRecord
+ */
+func (self *Topology) AddRecord(record TopologyRecord) {
+	self.Records = append(self.Records, record)
+}
+
 
 
 

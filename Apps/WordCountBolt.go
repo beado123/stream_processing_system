@@ -9,7 +9,7 @@ type WordCountBolt struct {
  * @param [line number] : [line content]
  * @return [word] : [count] 
  */
-func (b *WordCountBolt) Execute(map[string]string) map[string]string {
+func (self *WordCountBolt) Execute(map[string]string) map[string]string {
 	
 }
 
