@@ -8,12 +8,20 @@ import (
 	"bufio"
 	"strings"
 	"io/ioutil"
-	//"strconv"
+	"strconv"
 )
+
+//MP4
+var workers []string
+var numOfWorker int
+var app string
+
+//MP3
 var m map[string][]string
 var version map[string]int
 var pointer int
 
+//MP2
 //membership list of introducer
 var lst []string
 //a map from machine number to its ip address
@@ -355,13 +363,52 @@ func parseRequest(conn net.Conn) {
 	fmt.Println(reqArr)
 
 	app := reqArr[0]
-	app = app[:(len(app)-1)]
+	workers := reqArr[1]
+	workers = workers[:(len(workers)-1)]
+	numOfWorker, err = strconv.Atoi(workers)
+	checkErr(err)
 	
-	fmt.Println("Application:",app)
+	fmt.Println("Application:", app," \n", "Number of worker", numOfWorker)
 	//send response
-	//conn.Write([]byte())
+
+	sendJobToWorker()
 	//close connection
 	conn.Close()
+}
+
+func sendJobToWorker() {
+
+	var bolts []string	
+	for i:= 1; i< len(lst)-1; i++ {
+		bolts = append(bolts, lst[i])
+	}
+	resultCollector := lst[numOfWorker-1]
+
+	//send job to spout
+	sendJobToSpout(lst[0], bolts)
+	
+	//send job to boltc
+	for _, bolt := range bolts {
+		tcpDial(bolt, "boltc " + resultCollector)
+	}
+	//send job to boltl
+	tcpDial(resultCollector, "boltl")
+}
+
+func sendJobToSpout(spout string, bolts []string) {
+	out := "spout "
+	for _, elem := range bolts {
+		out += elem + " "
+	}
+	out = out[:(len(out)-1)]
+	tcpDial(spout, out)
+}
+
+func tcpDial(machine string, out string) {
+	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8000")
+	checkErr(err)
+	_, err = conn.Write([]byte(out))
+	checkErr(err)
 }
 
 //This function starts the master and listens for incoming tcp connection
