@@ -1,0 +1,17 @@
+.idea/
+*.exe
+*.txt
+*.log
+*.xml
+*.iml
+*.retry
+*.zip
+*.json
+.nfs*
+src/main
+src/ece428*
+src/*.sh
+pkg
+src/github.com
+MP3Instr.pdf
+testlogs/*

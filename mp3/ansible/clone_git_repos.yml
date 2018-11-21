@@ -1,0 +1,11 @@
+---
+- hosts: all
+  tasks:
+  - name: Clone MP3 git repo
+    git: repo=https://gitlab+deploy-token-22:yU7VEEFLonh1gUMHkRam@gitlab.engr.illinois.edu/cguldne2/ece428-mp3.git
+      dest=~/mp3
+      update=yes
+      force=yes
+      
+  - name: Get packages needed for execution
+    command: go get github.com/fatih/color
