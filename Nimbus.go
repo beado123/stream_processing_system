@@ -15,6 +15,7 @@ import (
 var workers []string
 var numOfWorker int
 var app string
+var ip string
 
 //MP3
 var m map[string][]string
@@ -315,11 +316,6 @@ func startIntroducer() {
 
 	fmt.Println("===starting introducer")
 
-	//get ip address from servers list	
-	ip := getIPAddr()
-	self = ip[15:17]
-	lst = append(lst, self)
-
 	//initialize ip map (num => ip)
 	ips = make(map[string]string)
 
@@ -442,6 +438,11 @@ func startMaster() {
 //This is the main function that starts the daemon process
 func main() {
 	
+	//get ip address from servers list	
+	ip := getIPAddr()
+	self = ip[15:17]
+	lst = append(lst, self)
+
 	for true {
 		buf := bufio.NewReader(os.Stdin)
 		input, err := buf.ReadBytes('\n')
