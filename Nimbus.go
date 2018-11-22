@@ -361,7 +361,7 @@ func parseRequest(conn net.Conn) {
 	
 	fmt.Println(reqArr)
 
-	app := reqArr[0]
+	app = reqArr[0]
 	workers := reqArr[1]
 	workers = workers[:(len(workers)-1)]
 	numOfWorker, err = strconv.Atoi(workers)
