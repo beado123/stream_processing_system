@@ -224,13 +224,13 @@ func sendMembershipListToPinger() {
 }
 
 //This function responses "ACK" to pinger
-func responsePing() {
+func responsePing(machine string) {
 
-	fmt.Fprintln(logWriter, "===response ping")
-	_, err := listnConn.WriteToUDP([]byte("ACK"), acceptMachineAddr)
-	if err != nil {
-		fmt.Fprintf(logWriter, "Couldn't send response %v", err)
-	}
+	fmt.Fprintln(logWriter, "===response ping", "machine", machine)
+	conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:3333")
+	checkErr(err)
+	_, err = conn.Write([]byte("ACK "+ self))
+	checkErr(err)
 }
 
 //This function checks if machine is in list of alive VMs
@@ -300,14 +300,13 @@ func parseUDPRequest(buf []byte, length int) {
 
 	} else if command == "PING" {
 		joinMachineNum = ""
-		responsePing()
+		responsePing(machine)
 	} 
 }
 
 //This function starts the introducer and listens for incoming UDP packets
 func startIntroducer() {
 
-	
 	//create local log file for debugging
 	file, err := os.Create("logger")
 	checkErr(err)
@@ -362,7 +361,7 @@ func parseRequest(conn net.Conn) {
 	
 	fmt.Println(reqArr)
 
-	app := reqArr[0]
+	app = reqArr[0]
 	workers := reqArr[1]
 	workers = workers[:(len(workers)-1)]
 	numOfWorker, err = strconv.Atoi(workers)
@@ -389,14 +388,14 @@ func sendJobToWorker() {
 	
 	//send job to boltc
 	for _, bolt := range bolts {
-		tcpDial(bolt, "boltc " + resultCollector)
+		tcpDial(bolt, "boltc " + app + " " + resultCollector)
 	}
 	//send job to boltl
-	tcpDial(resultCollector, "boltl")
+	tcpDial(resultCollector, "boltl " + app)
 }
 
 func sendJobToSpout(spout string, bolts []string) {
-	out := "spout "
+	out := "spout " + app + " "
 	for _, elem := range bolts {
 		out += elem + " "
 	}
@@ -440,7 +439,7 @@ func startMaster() {
 
 //This is the main function that starts the daemon process
 func main() {
-	
+
 	for true {
 		buf := bufio.NewReader(os.Stdin)
 		input, err := buf.ReadBytes('\n')
@@ -453,7 +452,7 @@ func main() {
 				go startMaster()
 
 			} else if strings.Contains(cmd, "LIST") {
-				fmt.Print("Membership list: [", self, " ")
+				fmt.Print("Membership list: [" + self + " ")
 				for i := 0; i < len(lst); i++ {
 					if i < len(lst) -1 {
 						fmt.Print(lst[i], " ")
