@@ -111,7 +111,7 @@ func ParseRequest(conn net.Conn) {
 			fmt.Println(curr)
 		}
 		//bolt := bolt.NewBolt(t, app, children)
-		//go BoltListen()
+		//go bolt.BoltListen()
 		
 	} else if reqArr[0] == "boltl" {
 		t := reqArr[0]
@@ -123,7 +123,7 @@ func ParseRequest(conn net.Conn) {
                         fmt.Println(curr)
                 }
 		//bolt := bolt.NewBolt(t, app, children)
-		//go BoltListen()
+		//go bolt.BoltListen()
 	} else if reqArr[0] == "spout" {
 		t := reqArr[0]
                 app := reqArr[1]
@@ -140,7 +140,7 @@ func ParseRequest(conn net.Conn) {
                         fmt.Println(curr)
                 }
 		//spout := spout.NewSpout(t, app, children)
-		//go SpoutStarting()
+		//go spout.SpoutStarting()
 	}
 }
 
