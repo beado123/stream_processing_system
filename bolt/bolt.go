@@ -1,7 +1,12 @@
 package bolt
 
 import (
-
+	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"io/ioutil"
+	"io"
 )
 
 type Bolt struct {
@@ -48,8 +53,25 @@ func (self *Bolt) BoltListen() {
 			fmt.Println(err)
 			return
 		}
-		go self.ParseRequest(conn)
+		if self.Type == "boltc" && self.App == "wordcount" {
+			go HandleWordCountBoltc(conn)
+		} else if self.Type == "boltl" && self.App == "wordcount" {
+			
+		}
 	}
+}
+
+//This function fill string into specific length by :
+func fillString(retunString string, toLength int) string {
+	for {
+		lengtString := len(retunString)
+		if lengtString < toLength {
+			retunString = retunString + ":"
+			continue
+		}
+		break
+	}
+	return retunString
 }
 
 func getIPAddrAndLogfile() string{
@@ -68,9 +90,64 @@ func getIPAddrAndLogfile() string{
 	return ip
 }
 
-func (self *Bolt) ParseRequest(conn net.Conn) {
-	bufferRequest := make([]byte, 8)
-	conn.Read(bufferRequest)
-	request := string(bufferRequest)
+func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
+	defer conn.Close()
+	for true {
+		bufferSize := make([]byte, 32)
+		_, err := conn.Read(bufferSize)
+		if err == io.EOF {
+			break
+		}
+		tupleSize := strings.Trim(string(bufferSize), ":")
+		num, _ := strconv.Atoi(tupleSize)
+		bufferTuple := make([]byte, num)
+		conn.Read(bufferTuple)
+		in = make(map[string]string)
+		json.Unmarshal(bufferTuple, in)
+		out := WordCountFirst(in)
+		self.SendToChildren(out)	
+	}
+}
+
+func (self *Bolt) SendToChildren(out map[string]string) {
+	// Marshal the map into a JSON string.
+   	empData, err := json.Marshal(out)   
+    	if err != nil {
+        	fmt.Println(err)
+        	return
+    	}
+	encode := string(empData)
+	for _, child := range self.Children {
+		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
+        	if err != nil {
+                	fmt.Println(err)
+                	return
+        	}
+		conn.Write([]byte(fillString(strconv.Itoa(len(encode)), 32)))
+		conn.Write([]byte(encode))
+	}
+}
+
+///////////////////////apps//////////////////////////////////
+func WordCountFirst(in map[string]string) map[string]string {
+	linenumber := in["linenumber"]
+	sentence := in["line"]
+	words := strings.Split(sentence, " ")
+	m := make(map[string]int)
+	for _, word := range words {
+		if _, ok := m[word]; ok {
+			m[word] += 1
+		} else {
+			m[word] = 1
+		}
+	}
+	out := make(map[string]string)
+	out["linenumber"] = linenumber
+	ret := ""
+	for word, count := range m {
+		ret += word + ":" + strconv.Itoa(count) + " "
+	}
+	out["lcounts"] = ret
+	return out
 }
 
