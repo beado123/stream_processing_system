@@ -15,7 +15,6 @@ import (
 var workers []string
 var numOfWorker int
 var app string
-var ip string
 
 //MP3
 var m map[string][]string
@@ -308,13 +307,16 @@ func parseUDPRequest(buf []byte, length int) {
 //This function starts the introducer and listens for incoming UDP packets
 func startIntroducer() {
 
-	
 	//create local log file for debugging
 	file, err := os.Create("logger")
 	checkErr(err)
 	logWriter = io.MultiWriter(file)
 
 	fmt.Println("===starting introducer")
+
+	//get ip address from servers list	
+	ip := getIPAddr()
+	self = ip[15:17]
 
 	//initialize ip map (num => ip)
 	ips = make(map[string]string)
@@ -437,11 +439,6 @@ func startMaster() {
 
 //This is the main function that starts the daemon process
 func main() {
-	
-	//get ip address from servers list	
-	ip := getIPAddr()
-	self = ip[15:17]
-	lst = append(lst, self)
 
 	for true {
 		buf := bufio.NewReader(os.Stdin)
@@ -455,7 +452,7 @@ func main() {
 				go startMaster()
 
 			} else if strings.Contains(cmd, "LIST") {
-				fmt.Print("Membership list: [")
+				fmt.Print("Membership list: [" + self + " ")
 				for i := 0; i < len(lst); i++ {
 					if i < len(lst) -1 {
 						fmt.Print(lst[i], " ")
