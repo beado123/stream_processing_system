@@ -388,14 +388,14 @@ func sendJobToWorker() {
 	
 	//send job to boltc
 	for _, bolt := range bolts {
-		tcpDial(bolt, "boltc " + resultCollector)
+		tcpDial(bolt, "boltc " + app + " " + resultCollector)
 	}
 	//send job to boltl
-	tcpDial(resultCollector, "boltl")
+	tcpDial(resultCollector, "boltl " + app)
 }
 
 func sendJobToSpout(spout string, bolts []string) {
-	out := "spout "
+	out := "spout " + app + " "
 	for _, elem := range bolts {
 		out += elem + " "
 	}
