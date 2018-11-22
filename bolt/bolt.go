@@ -12,6 +12,7 @@ type Bolt struct {
 	Children []string	
 	IsActive bool
 	Type string
+	App string
 }
 
 func NewBolt(t string, app string, children []string) (b *Bolt) {
@@ -22,13 +23,18 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		fmt.Println(err)
                 return
 	}
+	
 	b = &Bolt {
 		VmId: vm_id,
 		VmIpAddress: ip_address,
 		Ln: l,
 		PortTCP: "8888",
-		
+		Children: children,
+		IsActive: true,
+		Type: t,		
+		App: app,
 	}
+	return
 }
 
 func (self *Bolt) BoltListen() {
