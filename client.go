@@ -2,6 +2,7 @@ package main
 
 import (
 	"./daemon"
+	"./spout"
 	"os"
 	"bufio"
 	"fmt"
@@ -9,9 +10,14 @@ import (
 	"net"
 	"io/ioutil"
 )
+var appMap map[string]string
 
 //TCP: 6666, UDP:3333
 func main() {
+
+	m = make(map[string]string)
+	m["wordcount"] = "./wordcount_dataset"
+
 	if len(os.Args) < 2 {
 		fmt.Println("Please type in master id!")
 		return
@@ -139,8 +145,10 @@ func ParseRequest(conn net.Conn) {
                 for _, curr := range children {
                         fmt.Println(curr)
                 }
-		//spout := spout.NewSpout(t, app, children)
-		//go spout.SpoutStarting()
+		spout := new(spout.Spout)
+		spout.Init(m[app], app, children)
+		spout.Open()
+		go spout.Start()
 	}
 }
 
