@@ -225,13 +225,13 @@ func sendMembershipListToPinger() {
 }
 
 //This function responses "ACK" to pinger
-func responsePing() {
+func responsePing(machine string) {
 
-	fmt.Fprintln(logWriter, "===response ping")
-	_, err := listnConn.WriteToUDP([]byte("ACK"), acceptMachineAddr)
-	if err != nil {
-		fmt.Fprintf(logWriter, "Couldn't send response %v", err)
-	}
+	fmt.Fprintln(logWriter, "===response ping", "machine", machine)
+	conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:3333")
+	checkErr(err)
+	_, err = conn.Write([]byte("ACK "+ self))
+	checkErr(err)
 }
 
 //This function checks if machine is in list of alive VMs
@@ -301,7 +301,7 @@ func parseUDPRequest(buf []byte, length int) {
 
 	} else if command == "PING" {
 		joinMachineNum = ""
-		responsePing()
+		responsePing(machine)
 	} 
 }
 
