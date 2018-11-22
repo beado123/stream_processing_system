@@ -318,6 +318,7 @@ func startIntroducer() {
 	//get ip address from servers list	
 	ip := getIPAddr()
 	self = ip[15:17]
+	lst = append(lst, self)
 
 	//initialize ip map (num => ip)
 	ips = make(map[string]string)
@@ -453,7 +454,7 @@ func main() {
 				go startMaster()
 
 			} else if strings.Contains(cmd, "LIST") {
-				fmt.Print("Membership list: [", self, " ")
+				fmt.Print("Membership list: [")
 				for i := 0; i < len(lst); i++ {
 					if i < len(lst) -1 {
 						fmt.Print(lst[i], " ")
