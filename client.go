@@ -59,7 +59,7 @@ func main() {
 			} else if strings.Contains(cmd, "store") {
 				d.StoreRequest()
 			} else if strings.Contains(cmd, "wordcount") {
-				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:8000")
+				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:6666")
 	        		if err != nil {
         		        	fmt.Println(err)
         			}
