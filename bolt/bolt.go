@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"io/ioutil"
-	"io"
+	"os"
+	"encoding/json"
+	"sync"
 )
 
 type Bolt struct {
@@ -18,6 +20,8 @@ type Bolt struct {
 	IsActive bool
 	Type string
 	App string
+	WordCountMap map[string]int
+	MyMutex *sync.Mutex
 }
 
 func NewBolt(t string, app string, children []string) (b *Bolt) {
@@ -28,7 +32,7 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		fmt.Println(err)
                 return
 	}
-	
+	mutex := &sync.Mutex{}
 	b = &Bolt {
 		VmId: vm_id,
 		VmIpAddress: ip_address,
@@ -38,6 +42,8 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		IsActive: true,
 		Type: t,		
 		App: app,
+		WordCountMap: make(map[string]int),
+		MyMutex: mutex,
 	}
 	return
 }
@@ -54,10 +60,10 @@ func (self *Bolt) BoltListen() {
 			return
 		}
 		if self.Type == "boltc" && self.App == "wordcount" {
-			go HandleWordCountBoltc(conn)
+			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
-			
-		}
+			go self.HandleWordCountBoltl(conn)	
+		} 
 	}
 }
 
@@ -95,17 +101,18 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	for true {
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
-		if err == io.EOF {
+		if err != nil {
+			fmt.Println(err)
 			break
 		}
 		tupleSize := strings.Trim(string(bufferSize), ":")
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
-		in = make(map[string]string)
+		in := make(map[string]string)
 		json.Unmarshal(bufferTuple, in)
-		out := WordCountFirst(in)
-		self.SendToChildren(out)	
+		out := self.WordCountFirst(in)
+		go self.SendToChildren(out)	
 	}
 }
 
@@ -128,8 +135,38 @@ func (self *Bolt) SendToChildren(out map[string]string) {
 	}
 }
 
+func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
+        defer conn.Close()
+        for true {
+		bufferSize := make([]byte, 32)
+                _, err := conn.Read(bufferSize)
+                if err != nil {
+			fmt.Println(err)
+                        break
+                }
+                tupleSize := strings.Trim(string(bufferSize), ":")
+                num, _ := strconv.Atoi(tupleSize)
+                bufferTuple := make([]byte, num)
+                conn.Read(bufferTuple)		
+		in := make(map[string]string)
+                json.Unmarshal(bufferTuple, in)
+		self.WordCountSecond(in)
+	}
+	self.WriteIntoFileWordCount()
+}
+
+func (self *Bolt) WriteIntoFileWordCount() {
+	newFile, err := os.Create("local/" + self.App)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer newFile.Close()
+	for word, count := range self.WordCountMap {
+		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count))
+	}
+}
 ///////////////////////apps//////////////////////////////////
-func WordCountFirst(in map[string]string) map[string]string {
+func (self *Bolt) WordCountFirst(in map[string]string) map[string]string {
 	linenumber := in["linenumber"]
 	sentence := in["line"]
 	words := strings.Split(sentence, " ")
@@ -151,3 +188,19 @@ func WordCountFirst(in map[string]string) map[string]string {
 	return out
 }
 
+func (self *Bolt)WordCountSecond(in map[string]string) {
+	//linenumber := in["linenumber"]
+        sentence := in["lcounts"]
+	words := strings.Split(sentence, " ")
+	self.MyMutex.Lock()
+	for _, word := range words {
+		tuple := strings.Split(word, ":")
+		count, _ := strconv.Atoi(tuple[1]) 
+		if _, ok := self.WordCountMap[tuple[0]]; ok {
+                	self.WordCountMap[tuple[0]] += count
+                } else {
+                        self.WordCountMap[tuple[0]] = count
+                }
+	}
+	self.MyMutex.Unlock()
+}

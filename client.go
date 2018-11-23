@@ -3,6 +3,7 @@ package main
 import (
 	"./daemon"
 	"./spout"
+	"./bolt"
 	"os"
 	"bufio"
 	"fmt"
@@ -116,8 +117,8 @@ func ParseRequest(conn net.Conn) {
 		for _, curr := range children {
 			fmt.Println(curr)
 		}
-		//bolt := bolt.NewBolt(t, app, children)
-		//go bolt.BoltListen()
+		bolt := bolt.NewBolt(t, app, children)
+		go bolt.BoltListen()
 		
 	} else if reqArr[0] == "boltl" {
 		t := reqArr[0]
@@ -128,8 +129,8 @@ func ParseRequest(conn net.Conn) {
 		for _, curr := range children {
                         fmt.Println(curr)
                 }
-		//bolt := bolt.NewBolt(t, app, children)
-		//go bolt.BoltListen()
+		bolt := bolt.NewBolt(t, app, children)
+		go bolt.BoltListen()
 	} else if reqArr[0] == "spout" {
 		t := reqArr[0]
                 app := reqArr[1]
