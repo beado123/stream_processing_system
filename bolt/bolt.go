@@ -179,7 +179,7 @@ func (self *Bolt) WriteIntoFileWordCount() {
 	}
 	defer newFile.Close()
 	for word, count := range self.WordCountMap {
-		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count))
+		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count) + "\n")
 	}
 }
 ///////////////////////apps//////////////////////////////////
