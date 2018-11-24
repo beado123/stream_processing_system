@@ -28,6 +28,7 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
 	l, err := net.Listen("tcp", ip_address + ":5555")
+	//l, err := net.Listen("tcp", "fa18-cs425-g69-02.cs.illinois.edu:5555")
 	if err != nil {
 		fmt.Println(err)
                 return
@@ -52,6 +53,7 @@ func (self *Bolt) BoltListen() {
 	if self.IsActive == false {
 		return
 	}
+	defer self.Ln.Close()
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
@@ -92,7 +94,7 @@ func getIPAddrAndLogfile() string{
 	if strings.HasSuffix(ip, "\n") {
 		ip = ip[:(len(ip) - 1)]
 	}
-	fmt.Println("ip address of current VM:\n", ip)
+	//fmt.Println("ip address of current VM:\n", ip)
 	return ip
 }
 
