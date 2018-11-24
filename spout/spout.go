@@ -57,10 +57,13 @@ func (self *Spout) Open() {
 
 func SendToBolt(machine string, jsonStr string) {
 	//conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8888")
-	_, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
+	fmt.Println("machine sendToBolt", machine)
+	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
-	_, err = connMap[machine].Write([]byte(jsonStr))
+	fmt.Println("Wrote", len, "bytes")
+	len, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
+	fmt.Println("Wrote",len, "bytes" )
 	fmt.Println("write over ===")
 }
 
@@ -78,11 +81,14 @@ func (self *Spout) Start() {
 	length := len(self.Children)
 	connMap = make(map[string]net.Conn)
 	for _, vm := range self.Children {
-		conn, err := net.Dial("udp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:8888")
+		fmt.Println("vm", vm)
+		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:8888")
+		fmt.Println("conn", conn)
 		checkErr(err)
 		connMap[vm] = conn
 	}
 	for self.Scanner.Scan() {
+		fmt.Println("index", index)
 		self.LineNum += 1
 		emit := make(map[string]string)
 		emit["linenumber"] = strconv.Itoa(self.LineNum)
