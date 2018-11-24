@@ -27,7 +27,7 @@ type Bolt struct {
 func NewBolt(t string, app string, children []string) (b *Bolt) {
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
-	l, err := net.Listen("tcp", ip_address + ":8888")
+	l, err := net.Listen("tcp", ip_address + ":5555")
 	if err != nil {
 		fmt.Println(err)
                 return
@@ -37,7 +37,7 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		VmId: vm_id,
 		VmIpAddress: ip_address,
 		Ln: l,
-		PortTCP: "8888",
+		PortTCP: "5555",
 		Children: children,
 		IsActive: true,
 		Type: t,		
