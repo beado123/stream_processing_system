@@ -16,8 +16,8 @@ var appMap map[string]string
 //TCP: 6666, UDP:3333
 func main() {
 
-	m = make(map[string]string)
-	m["wordcount"] = "./wordcount_dataset"
+	appMap = make(map[string]string)
+	appMap["wordcount"] = "./wordcount_dataset"
 
 	if len(os.Args) < 2 {
 		fmt.Println("Please type in master id!")
@@ -147,7 +147,7 @@ func ParseRequest(conn net.Conn) {
                         fmt.Println(curr)
                 }
 		spout := new(spout.Spout)
-		spout.Init(m[app], app, children)
+		spout.Init(appMap[app], app, children)
 		spout.Open()
 		go spout.Start()
 	}

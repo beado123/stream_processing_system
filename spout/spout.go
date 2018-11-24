@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"encoding/json"
+	"net"
 )
 
 type Spout struct {
@@ -22,6 +23,19 @@ func checkErr(err error) {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
+}
+
+//This function fill string into specific length by :
+func fillString(retunString string, toLength int) string {
+	for {
+		lengtString := len(retunString)
+		if lengtString < toLength {
+			retunString = retunString + ":"
+			continue
+		}
+		break
+	}
+	return retunString
 }
 
 func (self *Spout) Init(filePath string, app string, children []string) {
@@ -49,7 +63,7 @@ func SendToBolt(machine string, jsonStr string) {
 	checkErr(err)
 }
 
-func (self *Spout) Encode(machine string, emit map[string]string) {
+func Encode(machine string, emit map[string]string) {
 	emitData, err := json.Marshal(emit)
 	checkErr(err)
 	jsonStr := string(emitData)
@@ -69,7 +83,7 @@ func (self *Spout) Start() {
 		fmt.Println(emit["linenumber"], emit["line"])
 		Encode(self.Children[index], emit)
 		if index == length -1 {
-			indexx = 0
+			index = 0
 		} else {
 			index += 1
 		}
