@@ -52,13 +52,13 @@ func (self *Bolt) BoltListen() {
 	if self.IsActive == false {
 		return
 	}
-
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
 		if self.Type == "boltc" && self.App == "wordcount" {
 			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
@@ -106,7 +106,8 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 
 	for true {
 		bufferSize := make([]byte, 32)
-		_, err := conn.Read(bufferSize)
+		reqLen, err := conn.Read(bufferSize)
+		fmt.Println(reqLen)
 		if err != nil {
 			fmt.Println(err)
 			break
