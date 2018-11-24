@@ -10,6 +10,7 @@ import (
 	"net"
 )
 
+var connMap map[string]net.Conn
 type Spout struct {
 	App string
 	FilePath string
@@ -55,12 +56,12 @@ func (self *Spout) Open() {
 }
 
 func SendToBolt(machine string, jsonStr string) {
-	conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8888")
+	//conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8888")
+	_, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
-	_, err = conn.Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
+	_, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
-	_, err = conn.Write([]byte(jsonStr))
-	checkErr(err)
+	fmt.Println("write over ===")
 }
 
 func Encode(machine string, emit map[string]string) {
@@ -75,6 +76,12 @@ func (self *Spout) Start() {
 
 	index := 0
 	length := len(self.Children)
+	connMap = make(map[string]net.Conn)
+	for _, vm := range self.Children {
+		conn, err := net.Dial("udp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:8888")
+		checkErr(err)
+		connMap[vm] = conn
+	}
 	for self.Scanner.Scan() {
 		self.LineNum += 1
 		emit := make(map[string]string)
