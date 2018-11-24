@@ -111,6 +111,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		conn.Read(bufferTuple)
 		in := make(map[string]string)
 		json.Unmarshal(bufferTuple, in)
+		fmt.Print(in)////////////////////////
 		out := self.WordCountFirst(in)
 		go self.SendToChildren(out)	
 	}
@@ -150,6 +151,7 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)		
 		in := make(map[string]string)
                 json.Unmarshal(bufferTuple, in)
+		fmt.Print(in)////////////////////////
 		self.WordCountSecond(in)
 	}
 	self.WriteIntoFileWordCount()
