@@ -23,6 +23,7 @@ type Bolt struct {
 	App string
 	WordCountMap map[string]int
 	MyMutex *sync.Mutex
+	ConnToChildren map[string]net.Conn
 }
 
 func NewBolt(t string, app string, children []string) (b *Bolt) {
@@ -45,6 +46,7 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		App: app,
 		WordCountMap: make(map[string]int),
 		MyMutex: mutex,
+		ConnToChildren: make(map[string]net.Conn),
 	}
 	return
 }
@@ -100,11 +102,15 @@ func getIPAddrAndLogfile() string{
 
 func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	defer conn.Close()
-	connToChild, err := net.Dial("tcp", "fa18-cs425-g69-" + self.Children[0] + ".cs.illinois.edu:" + self.PortTCP)
+	//set up connection to children
+	for _, child := range self.Children {
+		connToChild, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
                 if err != nil {
                         fmt.Println(err)
                         return
-        }
+        	}
+		self.ConnToChildren[child] = connToChild
+	}
 
 	for true {
 		bufferSize := make([]byte, 32)
@@ -116,22 +122,21 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
-		fmt.Println(string(bufferTuple))
-		//in := make(map[string]string)
+		//fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
-		for key, value := range in {
+		/*for key, value := range in {
 			fmt.Println(key, value)
-		}
+		}*/
 		out := self.WordCountFirst(in)
-		for key, value := range out {
+		/*for key, value := range out {
                         fmt.Println(key, value)
-                }
-		self.SendToChildren(out, connToChild)	
+                }*/
+		self.SendToChildren(out)	
 	}
 }
 
-func (self *Bolt) SendToChildren(out map[string]string, conn net.Conn) {
+func (self *Bolt) SendToChildren(out map[string]string) {
 	// Marshal the map into a JSON string.
    	empData, err := json.Marshal(out)   
     	if err != nil {
@@ -139,15 +144,10 @@ func (self *Bolt) SendToChildren(out map[string]string, conn net.Conn) {
         	return
     	}
 	encode := string(empData)
-	//for _, child := range self.Children {
-		/*conn, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
-        	if err != nil {
-                	fmt.Println(err)
-                	return
-        	}*/
+	for _, conn := range self.ConnToChildren {
 		conn.Write([]byte(fillString(strconv.Itoa(len(encode)), 32)))
 		conn.Write([]byte(encode))
-	//}
+	}
 }
 
 func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
@@ -164,9 +164,9 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)		
 		var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-		for key, value := range in {
+		/*for key, value := range in {
                         fmt.Println(key, value)
-                }
+                }*/
 		self.WordCountSecond(in)
 	}
 	self.WriteIntoFileWordCount()
@@ -179,7 +179,7 @@ func (self *Bolt) WriteIntoFileWordCount() {
 	}
 	defer newFile.Close()
 	for word, count := range self.WordCountMap {
-		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count))
+		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count) + "\n")
 	}
 }
 ///////////////////////apps//////////////////////////////////
@@ -209,7 +209,6 @@ func (self *Bolt)WordCountSecond(in map[string]string) {
 	//linenumber := in["linenumber"]
         sentence := in["lcounts"]
 	words := strings.Split(sentence, " ")
-	fmt.Println(len(words))
 	self.MyMutex.Lock()
 	for i, word := range words {
 		if i != len(words) - 1 {
