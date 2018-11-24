@@ -15,7 +15,6 @@ import (
 var workers []string
 var numOfWorker int
 var app string
-var l net.Listener
 
 //MP3
 var m map[string][]string
@@ -558,7 +557,7 @@ func parseRequestMaster(conn net.Conn) {
 
 //This function starts the master and listens for incoming tcp connection
 func startMaster() {
-
+	fmt.Println("in master")
 	pointer = -1
 	m = make(map[string][]string)
 	version = make(map[string]int)
@@ -567,12 +566,12 @@ func startMaster() {
 	ip := getIPAddr()
 	selfMachineNum = ip[15:17]
 	//listen for incoming connections
-	l, _ = net.Listen("tcp", ip + ":6666")
-	//printErr(err, "listening")
+	l, err := net.Listen("tcp", ip + ":6666")
+	printErr(err, "listening")
 	
 	//close the listener when app closes
 	defer l.Close()
-	fmt.Println("Listening on port 5678")
+	fmt.Println("Master Listening on port 6666")
 
 	//Listen for incoming connections
 	for {
@@ -655,14 +654,15 @@ func startNimbus() {
 	version = make(map[string]int)
 
 	//get ip address from servers list	
-	//ip := getIPAddr()
+	ip := getIPAddr()
 	//listen for incoming connections
-	//l, err := net.Listen("tcp", ip + ":6666")
-	//printErr(err, "listening")
+	l, err := net.Listen("tcp", ip + ":8000")
+	printErr(err, "listening")
 	
 	//close the listener when app closes
-	//defer l.Close()
-	fmt.Println("Nimbus Listening on port 6666")
+	defer l.Close()
+	fmt.Println("Nimbus Listening on port 8000")
+	fmt.Println("l", l)
 
 	//Listen for incoming connections
 	for {
