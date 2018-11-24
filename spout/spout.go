@@ -80,13 +80,13 @@ func (self *Spout) Start() {
 	index := 0
 	length := len(self.Children)
 	connMap = make(map[string]net.Conn)
-	for _, vm := range self.Children {
-		fmt.Println("vm", vm)
-		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:8888")
+	//for _, vm := range self.Children {
+		//fmt.Println("vm", vm)
+		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + "02" + ".cs.illinois.edu:5555")
 		fmt.Println("conn", conn)
 		checkErr(err)
-		connMap[vm] = conn
-	}
+		//connMap[vm] = conn
+	//}
 	for self.Scanner.Scan() {
 		fmt.Println("index", index)
 		self.LineNum += 1
