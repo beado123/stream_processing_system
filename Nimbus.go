@@ -20,6 +20,7 @@ var app string
 var m map[string][]string
 var version map[string]int
 var pointer int
+var selfMachineNum string
 
 //MP2
 //membership list of introducer
@@ -348,8 +349,243 @@ func startIntroducer() {
    }
 }
 
+//This function assigns another VM which is alive to the file that has a failed replica
+func reassignFilesToOtherVM(machine string) {
+
+	fileArr := []string{}
+	for file,_ := range m {
+		for _,vm := range m[file] {
+			if vm == machine {
+				fileArr = append(fileArr, file)
+			}
+		}
+	}
+	fmt.Printf("files in crashed machine: %#v\n", fileArr)
+	
+	for index:=0; index<len(fileArr); index++ {
+		oneFile := fileArr[index]
+		fmt.Println("vm group of", oneFile, m[oneFile])
+
+		//remove crashed machine from m[oneFile]
+		machineIndex := -1
+		for i:=0; i<len(m[oneFile]); i++ {
+			if m[oneFile][i] == machine {
+				machineIndex = i
+			}
+		}
+		m[oneFile] = append(m[oneFile][:machineIndex], m[oneFile][machineIndex+1:]...)
+		fmt.Println("vm froup after removing", oneFile,  m[oneFile])
+
+		//find vm other than VMs in m[oneFile]
+		newVm := -1
+		fmt.Println("lst", lst)
+		for i:=0; i<len(lst); i++ {
+			foundSame := false
+			for j:=0; j<len(m[oneFile]); j++ {
+				fmt.Print(lst[i], m[oneFile][j], " ")
+				if lst[i] == m[oneFile][j] {
+					foundSame = true
+				}
+			}
+			if foundSame == false {
+				newVm = i
+				break
+			}
+		}
+		fmt.Print("\n")
+		fmt.Println("newVm", newVm)
+		if newVm == -1 {
+			fmt.Println("Cannot find VM other than", m[oneFile])
+			//return	
+		}
+		//append new VM to file vm group
+		m[oneFile] = append(m[oneFile], lst[newVm])
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s%s%s", "fa18-cs425-g69-", m[oneFile][0], ".cs.illinois.edu:6666"))
+		checkErr(err)
+		_, err = conn.Write([]byte("failfail"))
+		_, err = conn.Write([]byte(oneFile + "\n" + lst[newVm]))
+		checkErr(err)
+	}
+}
+
+//This function returns a list of replicas to the new file being inserted and updates the pointer for tracking the next 4 replicas
+func getStorePosition() [4]string{
+	n := len(lst)
+	arr := [4]string{}
+	fmt.Println(pointer,lst)
+	if pointer + 1 < n {
+		arr[0] = lst[pointer+1]
+	} else {arr[0] = lst[0]}
+	if pointer + 2 < n {
+		arr[1] = lst[pointer+2]
+	} else {arr[1] = lst[(pointer+2-n)]}
+	if pointer + 3 < n {
+		arr[2] = lst[pointer+3]
+	} else {arr[2] = lst[pointer+3-n]}
+	if pointer + 4 < n {
+		arr[3] = lst[pointer+4]	
+		pointer += 4
+	} else {
+		arr[3] = lst[pointer+4-n]
+		pointer = (pointer+4) - n
+	}
+	return arr
+}
+
+//This function parses requests of MP3(put, get, lst...) sent by VMs other than master 
+func parseRequestMaster(conn net.Conn) {
+
+	//create a buffer to hold transferred data and read incoming data into buffer
+	buf := make([]byte, 1024)
+	reqLen, err := conn.Read(buf)
+	printErr(err, "reading")
+
+	//convert request command into array
+	reqArr := strings.Split(string(buf[:reqLen]), " ")
+	
+	fmt.Println(reqArr)
+
+	cmd := reqArr[0]
+	out := ""
+	if cmd == "put"{
+		//"put localfilename sdfsfilename"
+		fileName := reqArr[2]
+		fileName = fileName[:len(fileName)-1]
+		fmt.Println("filename", m[fileName])
+		_, ok := m[fileName]
+		if ok && m[fileName] != nil{
+			vms := m[fileName]
+			version[fileName]++;
+			out += strconv.Itoa(version[fileName]) + "\n"
+			for i:=0; i<len(vms); i++ {
+				out += vms[i] + " "
+			}
+			out = out[:(len(out)-1)]			
+		} else {
+			//upload new file
+			version[fileName] = 1
+			out += "1\n"
+			vms := getStorePosition()
+			
+			for i:=0; i<len(vms); i++ {
+				m[fileName] = append(m[fileName], vms[i])
+			}	
+			fmt.Println("assign vm after", m[fileName])
+			fmt.Println(m[fileName][0])	
+			for i:=0; i<len(vms); i++ {
+				out += vms[i] + " "
+			}	
+			out = out[:(len(out)-1)]
+		}
+	} else if cmd == "get" {
+		//"get sdfsfilename localfilename"
+		fileName := reqArr[1]
+		fmt.Println("fileName", fileName)
+		_, ok := m[fileName]
+		if ok && m[fileName] != nil{
+			vms := m[fileName]
+			out += strconv.Itoa(version[fileName]) + "\n"
+			out += vms[0]
+		} else {
+			fmt.Println("File", fileName, "does not Exist!")
+			out = "NOTFOUND\nNOTFOUND"
+		}	
+
+	} else if cmd == "ls" {
+		//"ls sdfsfilename"
+		fileName := reqArr[1]
+		fileName = fileName[:(len(fileName)-1)]
+		fmt.Println("ls", m[fileName])
+		_, ok := m[fileName]
+		if ok && m[fileName] != nil {
+			vms := m[fileName]
+			for i:=0; i<len(vms); i++ {
+				out += vms[i] + " "
+			}
+			out = out[:(len(out)-1)]
+		} else {
+			fmt.Println("File", fileName, "does not exist!")
+			out = "NOTFOUND"
+		}	
+
+	} else if cmd == "delete" {
+		//"delete sdfsfilename"
+		fileName := reqArr[1]
+		fileName = fileName[:(len(fileName)-1)]
+		fmt.Println(m[fileName])
+		_, ok := m[fileName]
+		if ok {
+			vms := m[fileName]
+			for i:=0; i<len(vms); i++ {
+				out += vms[i] + " "
+			}
+			out  = out[:(len(out)-1)]
+			m[fileName] = nil
+			version[fileName] = -1
+		} else {
+			out = "NOTFOUND"
+			fmt.Println("File", fileName, "does not exist!") 
+		}
+
+	} else if cmd == "get-versions" {
+		//"get-versions sdfsfilename num-versions localfilename"
+		//return version-num1 version-num2\nvm1 vm2
+		fileName := reqArr[1]
+		numVersion, err := strconv.Atoi(reqArr[2])	
+		if err != nil {
+			fmt.Println(err)
+		}
+		currVersion := version[fileName]
+		for i:=0; i<numVersion; i++ {
+			out += strconv.Itoa(currVersion-i) + " "
+		}
+		out = out[:(len(out) -1)]
+		_, ok := m[fileName]
+		if ok {
+			out += "\n" + m[fileName][0]
+		} else {
+			fmt.Println("File", fileName, "does not exist!")
+		}
+	}
+
+	fmt.Println("Write back to worker",out)
+	//send response
+	conn.Write([]byte(out))
+	//close connection
+	conn.Close()
+}
+
+//This function starts the master and listens for incoming tcp connection
+func startMaster() {
+
+	pointer = -1
+	m = make(map[string][]string)
+	version = make(map[string]int)
+
+	//get ip address from servers list	
+	ip := getIPAddr()
+	selfMachineNum = ip[15:17]
+	//listen for incoming connections
+	l, err := net.Listen("tcp", ip + ":6666")
+	printErr(err, "listening")
+	
+	//close the listener when app closes
+	defer l.Close()
+	fmt.Println("Listening on port 5678")
+
+	//Listen for incoming connections
+	for {
+		conn, err := l.Accept()
+		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
+		printErr(err, "accepting")
+
+		go parseRequestMaster(conn)
+	}
+}
+
+
 //This function parses requests of App(wordCount...) sent by VMs other than master 
-func parseRequest(conn net.Conn) {
+func parseRequestNimbus(conn net.Conn) {
 
 	//create a buffer to hold transferred data and read incoming data into buffer
 	buf := make([]byte, 1024)
@@ -411,7 +647,7 @@ func tcpDial(machine string, out string) {
 }
 
 //This function starts the master and listens for incoming tcp connection
-func startMaster() {
+func startNimbus() {
 
 	pointer = -1
 	m = make(map[string][]string)
@@ -433,7 +669,7 @@ func startMaster() {
 		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
 		printErr(err, "accepting")
 
-		go parseRequest(conn)
+		go parseRequestNimbus(conn)
 	}
 }
 
@@ -450,6 +686,7 @@ func main() {
 			if strings.Contains(cmd, "JOIN") {
 				go startIntroducer()
 				go startMaster()
+				go startNimbus()
 
 			} else if strings.Contains(cmd, "LIST") {
 				fmt.Print("Membership list: [" + self + " ")
