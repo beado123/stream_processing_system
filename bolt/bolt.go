@@ -28,7 +28,6 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
 	l, err := net.Listen("tcp", ip_address + ":5555")
-	//l, err := net.Listen("tcp", "fa18-cs425-g69-02.cs.illinois.edu:5555")
 	if err != nil {
 		fmt.Println(err)
                 return
@@ -54,6 +53,7 @@ func (self *Bolt) BoltListen() {
 		return
 	}
 	defer self.Ln.Close()
+	fmt.Println(self.Ln)
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
