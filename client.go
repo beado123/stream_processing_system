@@ -118,7 +118,7 @@ func ParseRequest(conn net.Conn) {
 			fmt.Println(curr)
 		}
 		bolt := bolt.NewBolt(t, app, children)
-		go bolt.BoltListen()
+		bolt.BoltListen()
 		
 	} else if reqArr[0] == "boltl" {
 		t := reqArr[0]
@@ -130,7 +130,7 @@ func ParseRequest(conn net.Conn) {
                         fmt.Println(curr)
                 }
 		bolt := bolt.NewBolt(t, app, children)
-		go bolt.BoltListen()
+		bolt.BoltListen()
 	} else if reqArr[0] == "spout" {
 		t := reqArr[0]
                 app := reqArr[1]
@@ -149,7 +149,7 @@ func ParseRequest(conn net.Conn) {
 		spout := new(spout.Spout)
 		spout.Init(appMap[app], app, children)
 		spout.Open()
-		go spout.Start()
+		spout.Start()
 	}
 }
 
@@ -165,6 +165,6 @@ func getIPAddrAndLogfile() string{
 	if strings.HasSuffix(ip, "\n") {
 		ip = ip[:(len(ip) - 1)]
 	}
-	fmt.Println("ip address of current VM:\n", ip)
+	//fmt.Println("ip address of current VM:\n", ip)
 	return ip
 }
