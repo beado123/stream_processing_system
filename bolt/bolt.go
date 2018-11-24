@@ -9,6 +9,7 @@ import (
 	"os"
 	"encoding/json"
 	"sync"
+	"io"
 )
 
 type Bolt struct {
@@ -108,8 +109,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	for true {
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
-		if err != nil {
-			fmt.Println(err)
+		if err == io.EOF {
 			break
 		}
 		tupleSize := strings.Trim(string(bufferSize), ":")
@@ -155,8 +155,7 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
         for true {
 		bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
-                if err != nil {
-			fmt.Println(err)
+                if err == io.EOF {
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
@@ -210,15 +209,18 @@ func (self *Bolt)WordCountSecond(in map[string]string) {
 	//linenumber := in["linenumber"]
         sentence := in["lcounts"]
 	words := strings.Split(sentence, " ")
+	fmt.Println(len(words))
 	self.MyMutex.Lock()
-	for _, word := range words {
-		tuple := strings.Split(word, ":")
-		count, _ := strconv.Atoi(tuple[1]) 
-		if _, ok := self.WordCountMap[tuple[0]]; ok {
-                	self.WordCountMap[tuple[0]] += count
-                } else {
-                        self.WordCountMap[tuple[0]] = count
-                }
+	for i, word := range words {
+		if i != len(words) - 1 {
+			tuple := strings.Split(word, ":")
+			count, _ := strconv.Atoi(tuple[1]) 
+			if _, ok := self.WordCountMap[tuple[0]]; ok {
+                		self.WordCountMap[tuple[0]] += count
+                	} else {
+                        	self.WordCountMap[tuple[0]] = count
+                	}
+		}
 	}
 	self.MyMutex.Unlock()
 }
