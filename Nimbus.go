@@ -15,6 +15,7 @@ import (
 var workers []string
 var numOfWorker int
 var app string
+var l net.Listener
 
 //MP3
 var m map[string][]string
@@ -566,8 +567,8 @@ func startMaster() {
 	ip := getIPAddr()
 	selfMachineNum = ip[15:17]
 	//listen for incoming connections
-	l, err := net.Listen("tcp", ip + ":6666")
-	printErr(err, "listening")
+	l, _ = net.Listen("tcp", ip + ":6666")
+	//printErr(err, "listening")
 	
 	//close the listener when app closes
 	defer l.Close()
@@ -654,14 +655,14 @@ func startNimbus() {
 	version = make(map[string]int)
 
 	//get ip address from servers list	
-	ip := getIPAddr()
+	//ip := getIPAddr()
 	//listen for incoming connections
-	l, err := net.Listen("tcp", ip + ":6666")
-	printErr(err, "listening")
+	//l, err := net.Listen("tcp", ip + ":6666")
+	//printErr(err, "listening")
 	
 	//close the listener when app closes
-	defer l.Close()
-	fmt.Println("Listening on port 5678")
+	//defer l.Close()
+	fmt.Println("Nimbus Listening on port 6666")
 
 	//Listen for incoming connections
 	for {
