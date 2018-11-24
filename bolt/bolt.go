@@ -53,14 +53,13 @@ func (self *Bolt) BoltListen() {
 		return
 	}
 	defer self.Ln.Close()
-	fmt.Println(self.Ln)
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
+		//fmt.Println("TCP Accept:", conn.RemoteAddr().String())
 		if self.Type == "boltc" && self.App == "wordcount" {
 			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
@@ -108,8 +107,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 
 	for true {
 		bufferSize := make([]byte, 32)
-		reqLen, err := conn.Read(bufferSize)
-		fmt.Println(reqLen)
+		_, err := conn.Read(bufferSize)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -118,8 +116,10 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
-		in := make(map[string]string)
-		json.Unmarshal(bufferTuple, in)
+		fmt.Println(string(bufferTuple))
+		//in := make(map[string]string)
+		var in map[string]string
+		json.Unmarshal(bufferTuple, &in)
 		for key, value := range in {
 			fmt.Println(key, value)
 		}
@@ -127,7 +127,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		for key, value := range out {
                         fmt.Println(key, value)
                 }
-		go self.SendToChildren(out, connToChild)	
+		self.SendToChildren(out, connToChild)	
 	}
 }
 
@@ -163,14 +163,14 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 num, _ := strconv.Atoi(tupleSize)
                 bufferTuple := make([]byte, num)
                 conn.Read(bufferTuple)		
-		in := make(map[string]string)
-                json.Unmarshal(bufferTuple, in)
+		var in map[string]string
+                json.Unmarshal(bufferTuple, &in)
 		for key, value := range in {
                         fmt.Println(key, value)
                 }
-		//self.WordCountSecond(in)
+		self.WordCountSecond(in)
 	}
-	//self.WriteIntoFileWordCount()
+	self.WriteIntoFileWordCount()
 }
 
 func (self *Bolt) WriteIntoFileWordCount() {
