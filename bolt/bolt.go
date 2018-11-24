@@ -98,6 +98,12 @@ func getIPAddrAndLogfile() string{
 
 func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	defer conn.Close()
+	connToChild, err := net.Dial("tcp", "fa18-cs425-g69-" + self.Children[0] + ".cs.illinois.edu:" + self.PortTCP)
+                if err != nil {
+                        fmt.Println(err)
+                        return
+        }
+
 	for true {
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
@@ -113,11 +119,11 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		json.Unmarshal(bufferTuple, in)
 		fmt.Print(in)////////////////////////
 		out := self.WordCountFirst(in)
-		go self.SendToChildren(out)	
+		go self.SendToChildren(out, connToChild)	
 	}
 }
 
-func (self *Bolt) SendToChildren(out map[string]string) {
+func (self *Bolt) SendToChildren(out map[string]string, conn net.Conn) {
 	// Marshal the map into a JSON string.
    	empData, err := json.Marshal(out)   
     	if err != nil {
@@ -125,15 +131,15 @@ func (self *Bolt) SendToChildren(out map[string]string) {
         	return
     	}
 	encode := string(empData)
-	for _, child := range self.Children {
-		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
+	//for _, child := range self.Children {
+		/*conn, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
         	if err != nil {
                 	fmt.Println(err)
                 	return
-        	}
+        	}*/
 		conn.Write([]byte(fillString(strconv.Itoa(len(encode)), 32)))
 		conn.Write([]byte(encode))
-	}
+	//}
 }
 
 func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
