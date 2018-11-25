@@ -103,6 +103,8 @@ func (self *Spout) Start() {
 	}
 	fmt.Println("==========File End==========")
 	for _, vm := range self.Children {
-		SendToBolt(vm, "END")
+		len, err := connMap[vm].Write([]byte(fillString("END", 32)))
+		checkErr(err)
+		fmt.Println("Wrote", len, "bytes")
 	}
 }

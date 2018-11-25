@@ -126,8 +126,11 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
                         return
                 }
 		tupleSize := strings.Trim(string(bufferSize), ":")
+		fmt.Println(tupleSize)
 		if tupleSize == "END" {
-			conn.Write([]byte(fillString("END", 32)))
+			for _, curr := range self.ConnToChildren {
+				curr.Write([]byte(fillString("END", 32)))
+			}
 			break
 		}
 		num, _ := strconv.Atoi(tupleSize)
@@ -136,9 +139,9 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
-		for key, value := range in {
+		/*for key, value := range in {
 			fmt.Println(key, value)
-		}
+		}*/
 		out := self.WordCountFirst(in)
 		for key, value := range out {
                         fmt.Println(key, value)
@@ -172,8 +175,10 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 		}
 
                 tupleSize := strings.Trim(string(bufferSize), ":")
+		fmt.Println(tupleSize)
 		if tupleSize == "END" {
 			self.NumOfFather -= 1
+			fmt.Println(self.NumOfFather)
                 	break
                 }
                 num, _ := strconv.Atoi(tupleSize)
