@@ -126,6 +126,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
                         return
                 }
 		tupleSize := strings.Trim(string(bufferSize), ":")
+		fmt.Println(tupleSize)
 		if tupleSize == "END" {
 			conn.Write([]byte(fillString("END", 32)))
 			break
@@ -136,9 +137,9 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
-		for key, value := range in {
+		/*for key, value := range in {
 			fmt.Println(key, value)
-		}
+		}*/
 		out := self.WordCountFirst(in)
 		for key, value := range out {
                         fmt.Println(key, value)
