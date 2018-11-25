@@ -628,7 +628,7 @@ func sendJobToWorker() {
 		tcpDial(bolt, "boltc " + app + " " + resultCollector)
 	}
 	//send job to boltl
-	tcpDial(resultCollector, "boltl " + app)
+	tcpDial(resultCollector, "boltl " + app + " " + strconv.Itoa(len(bolts)))
 }
 
 func sendJobToSpout(spout string, bolts []string) {
