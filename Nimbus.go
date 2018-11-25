@@ -576,7 +576,7 @@ func startMaster() {
 	//Listen for incoming connections
 	for {
 		conn, err := l.Accept()
-		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
+		fmt.Println("Master TCP Accept:", conn.RemoteAddr().String())
 		printErr(err, "accepting")
 
 		go parseRequestMaster(conn)
@@ -587,6 +587,7 @@ func startMaster() {
 //This function parses requests of App(wordCount...) sent by VMs other than master 
 func parseRequestNimbus(conn net.Conn) {
 
+	fmt.Println("in parseRequestNimnus")
 	//create a buffer to hold transferred data and read incoming data into buffer
 	buf := make([]byte, 1024)
 	reqLen, err := conn.Read(buf)
@@ -667,7 +668,7 @@ func startNimbus() {
 	//Listen for incoming connections
 	for {
 		conn, err := l.Accept()
-		fmt.Println("TCP Accept:", conn.RemoteAddr().String())
+		fmt.Println("Nimbus TCP Accept:", conn.RemoteAddr().String())
 		printErr(err, "accepting")
 
 		go parseRequestNimbus(conn)
