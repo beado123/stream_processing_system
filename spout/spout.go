@@ -103,6 +103,6 @@ func (self *Spout) Start() {
 	}
 	fmt.Println("==========File End==========")
 	for _, vm := range self.Children {
-		SendToBolt(vm, "END 1")
+		SendToBolt(vm, "END")
 	}
 }
