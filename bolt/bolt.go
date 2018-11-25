@@ -128,7 +128,9 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		tupleSize := strings.Trim(string(bufferSize), ":")
 		fmt.Println(tupleSize)
 		if tupleSize == "END" {
-			conn.Write([]byte(fillString("END", 32)))
+			for _, curr := range self.ConnToChildren {
+				curr.Write([]byte(fillString("END", 32)))
+			}
 			break
 		}
 		num, _ := strconv.Atoi(tupleSize)
@@ -173,8 +175,10 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 		}
 
                 tupleSize := strings.Trim(string(bufferSize), ":")
+		fmt.Println(tupleSize)
 		if tupleSize == "END" {
 			self.NumOfFather -= 1
+			fmt.Println(self.NumOfFather)
                 	break
                 }
                 num, _ := strconv.Atoi(tupleSize)
