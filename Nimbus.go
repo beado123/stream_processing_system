@@ -625,7 +625,7 @@ func sendJobToWorker() {
 	
 	//send job to boltc
 	for _, bolt := range bolts {
-		tcpDial(bolt, "boltc " + app + " " + resultCollector + " " + "1")
+		tcpDial(bolt, "boltc " + app + " " + "1" + " " + resultCollector)
 	}
 	//send job to boltl
 	tcpDial(resultCollector, "boltl " + app + " " + strconv.Itoa(len(bolts)))
