@@ -9,7 +9,8 @@ import (
 	"os"
 	"encoding/json"
 	"sync"
-	"io"
+	//"io"
+	"time"
 )
 
 type Bolt struct {
@@ -24,9 +25,10 @@ type Bolt struct {
 	WordCountMap map[string]int
 	MyMutex *sync.Mutex
 	ConnToChildren map[string]net.Conn
+	NumOfFather int
 }
 
-func NewBolt(t string, app string, children []string) (b *Bolt) {
+func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
 	l, err := net.Listen("tcp", ip_address + ":5555")
@@ -47,6 +49,7 @@ func NewBolt(t string, app string, children []string) (b *Bolt) {
 		WordCountMap: make(map[string]int),
 		MyMutex: mutex,
 		ConnToChildren: make(map[string]net.Conn),
+		NumOfFather: father,
 	}
 	return
 }
@@ -56,6 +59,9 @@ func (self *Bolt) BoltListen() {
 		return
 	}
 	defer self.Ln.Close()
+	if self.Type == "boltl" && self.App == "wordcount" {
+		go self.BoltlTimeToExitCheck()
+	}
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
@@ -66,7 +72,7 @@ func (self *Bolt) BoltListen() {
 		if self.Type == "boltc" && self.App == "wordcount" {
 			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
-			go self.HandleWordCountBoltl(conn)	
+			go self.HandleWordCountBoltl(conn)
 		} 
 	}
 }
@@ -116,13 +122,14 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
                 if err != nil {
-                        if err == io.EOF {
-                                break
-                        }
                         fmt.Println(err)
-                        break
+                        return
                 }
 		tupleSize := strings.Trim(string(bufferSize), ":")
+		if tupleSize == "END" {
+			conn.Write([]byte(fillString("END", 32)))
+			break
+		}
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
@@ -160,14 +167,15 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 		bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
-			if err == io.EOF {
-				break	
-			}
 			fmt.Println(err)
 			break
 		}
 
                 tupleSize := strings.Trim(string(bufferSize), ":")
+		if tupleSize == "END" {
+			self.NumOfFather -= 1
+                	break
+                }
                 num, _ := strconv.Atoi(tupleSize)
                 bufferTuple := make([]byte, num)
                 conn.Read(bufferTuple)		
@@ -178,7 +186,16 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 }
 		self.WordCountSecond(in)
 	}
-	self.WriteIntoFileWordCount()
+}
+
+func (self *Bolt) BoltlTimeToExitCheck() {
+	for true {
+		if self.NumOfFather == 0 {
+			self.WriteIntoFileWordCount()
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
+	}
 }
 
 func (self *Bolt) WriteIntoFileWordCount() {
