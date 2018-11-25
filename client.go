@@ -10,6 +10,7 @@ import (
 	"strings"
 	"net"
 	"io/ioutil"
+	"strconv"
 )
 var appMap map[string]string
 
@@ -105,31 +106,35 @@ func ParseRequest(conn net.Conn) {
 	if reqArr[0] == "boltc" {
 		t := reqArr[0]
 		app := reqArr[1]
+		father, _ := strconv.Atoi(reqArr[2])
 		var children []string
 		for i, child := range reqArr {
-			if i == 0 || i == 1 {
+			if i == 0 || i == 1 || i == 2{
 				continue
 			}
 			children = append(children, child)
 		}
 		fmt.Println(t)
 		fmt.Println(app)
+		fmt.Println(father)
 		for _, curr := range children {
 			fmt.Println(curr)
 		}
-		bolt := bolt.NewBolt(t, app, children)
+		bolt := bolt.NewBolt(t, app, children, father)
 		bolt.BoltListen()
 		
 	} else if reqArr[0] == "boltl" {
 		t := reqArr[0]
 		app := reqArr[1]
+		father, _ := strconv.Atoi(reqArr[2])
                 var children []string
 		fmt.Println(t)
                 fmt.Println(app)
+		fmt.Println(father)
 		for _, curr := range children {
                         fmt.Println(curr)
                 }
-		bolt := bolt.NewBolt(t, app, children)
+		bolt := bolt.NewBolt(t, app, children, father)
 		bolt.BoltListen()
 	} else if reqArr[0] == "spout" {
 		t := reqArr[0]
