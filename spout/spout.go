@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"net"
+	"time"
 )
 
 var connMap map[string]net.Conn
@@ -56,7 +57,6 @@ func (self *Spout) Open() {
 }
 
 func SendToBolt(machine string, jsonStr string) {
-	//conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8888")
 	fmt.Println("machine sendToBolt", machine)
 	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
@@ -64,7 +64,6 @@ func SendToBolt(machine string, jsonStr string) {
 	len, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
 	fmt.Println("Wrote",len, "bytes" )
-	fmt.Println("write over ===")
 }
 
 func Encode(machine string, emit map[string]string) {
@@ -80,6 +79,7 @@ func (self *Spout) Start() {
 	index := 0
 	length := len(self.Children)
 	connMap = make(map[string]net.Conn)
+	time.Sleep(time.Millisecond* 1000)
 	for _, vm := range self.Children {
 		fmt.Println("vm", vm)
 		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
