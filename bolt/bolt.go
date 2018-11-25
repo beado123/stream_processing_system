@@ -122,16 +122,16 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
-		//fmt.Println(string(bufferTuple))
+		fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
-		/*for key, value := range in {
+		for key, value := range in {
 			fmt.Println(key, value)
-		}*/
+		}
 		out := self.WordCountFirst(in)
-		/*for key, value := range out {
+		for key, value := range out {
                         fmt.Println(key, value)
-                }*/
+                }
 		self.SendToChildren(out)	
 	}
 }
@@ -164,9 +164,9 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)		
 		var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-		/*for key, value := range in {
+		for key, value := range in {
                         fmt.Println(key, value)
-                }*/
+                }
 		self.WordCountSecond(in)
 	}
 	self.WriteIntoFileWordCount()
