@@ -115,8 +115,12 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	for true {
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
-                if err == io.EOF {
-                	break
+                if err != nil {
+                        if err == io.EOF {
+                                break
+                        }
+                        fmt.Println(err)
+                        break
                 }
 		tupleSize := strings.Trim(string(bufferSize), ":")
 		num, _ := strconv.Atoi(tupleSize)
