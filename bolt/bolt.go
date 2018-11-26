@@ -11,6 +11,7 @@ import (
 	"sync"
 	//"io"
 	"time"
+	"sort"
 )
 
 type Bolt struct {
@@ -306,11 +307,37 @@ func (self *Bolt) WriteIntoFileFilterReddit() {
                 fmt.Println(err)
         }
         defer newFile.Close()
-        for username, count := range self.FilterRedditMap {
-                fmt.Fprintf(newFile, username + ":" + strconv.Itoa(count) + "\n")
+	//sort FilterRedditMap by number of posts in descending order
+	p := rankByWordCount(self.FilterRedditMap)
+        for i, curr := range p {
+		if i == 50 {
+			break
+		}
+                fmt.Fprintf(newFile, curr.Key + ":" + strconv.Itoa(curr.Value) + "\n")
         }
         fmt.Println("==Successfully write wordcount file!==")
 }
+
+func rankByWordCount(wordFrequencies map[string]int) PairList{
+  pl := make(PairList, len(wordFrequencies))
+  i := 0
+  for k, v := range wordFrequencies {
+    pl[i] = Pair{k, v}
+    i++
+  }
+  sort.Sort(sort.Reverse(pl))
+  return pl
+}
+
+type Pair struct {
+  Key string
+  Value int
+}
+
+type PairList []Pair
+func (p PairList) Len() int { return len(p) }
+func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+func (p PairList) Swap(i, j int){ p[i], p[j] = p[j], p[i] }
 ///////////////////////apps//////////////////////////////////
 func (self *Bolt) WordCountFirst(in map[string]string) map[string]string {
 	linenumber := in["linenumber"]
