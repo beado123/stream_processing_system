@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net"
 	"time"
+	"strings"
 )
 
 var connMap map[string]net.Conn
@@ -76,35 +77,79 @@ func Encode(machine string, emit map[string]string) {
 
 func (self *Spout) Start() {
 
-	index := 0
-	length := len(self.Children)
-	connMap = make(map[string]net.Conn)
-	time.Sleep(time.Millisecond* 1000)
-	for _, vm := range self.Children {
-		fmt.Println("vm", vm)
-		conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
-		fmt.Println("conn", conn)
-		checkErr(err)
-		connMap[vm] = conn
-	}
-	for self.Scanner.Scan() {
-		fmt.Println("index", index)
-		self.LineNum += 1
-		emit := make(map[string]string)
-		emit["linenumber"] = strconv.Itoa(self.LineNum)
-		emit["line"] = self.Scanner.Text()
-		fmt.Println(emit["linenumber"], emit["line"])
-		Encode(self.Children[index], emit)
-		if index == length -1 {
-			index = 0
-		} else {
-			index += 1
+	if(self.App == "wordcount"){
+
+		index := 0
+		length := len(self.Children)
+		connMap = make(map[string]net.Conn)
+		time.Sleep(time.Millisecond* 1000)
+		for _, vm := range self.Children {
+			fmt.Println("vm", vm)
+			conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
+			fmt.Println("conn", conn)
+			checkErr(err)
+			connMap[vm] = conn
+		}
+		for self.Scanner.Scan() {
+			fmt.Println("index", index)
+			self.LineNum += 1
+			emit := make(map[string]string)
+			emit["linenumber"] = strconv.Itoa(self.LineNum)
+			emit["line"] = self.Scanner.Text()
+			fmt.Println(emit["linenumber"], emit["line"])
+			Encode(self.Children[index], emit)
+			if index == length -1 {
+				index = 0
+			} else {
+				index += 1
+			}
+		}
+		fmt.Println("==========File End==========")
+		for _, vm := range self.Children {
+			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
+			checkErr(err)
+			fmt.Println("Wrote", len, "bytes")
+		}
+
+	} else if(self.App == "reddit"){
+
+		index := 0
+		length := len(self.Children)
+		connMap = make(map[string]net.Conn)
+		time.Sleep(time.Millisecond* 1000)
+		for _, vm := range self.Children {
+			fmt.Println("vm", vm)
+			conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
+			fmt.Println("conn", conn)
+			checkErr(err)
+			connMap[vm] = conn
+		}
+		for self.Scanner.Scan() {
+			fmt.Println("index", index)
+			self.LineNum += 1
+			arr := strings.Split(self.Scanner.Text(), ",")
+			emit := make(map[string]string)
+			emit["rawtime"] = arr[2]
+			emit["title"] = arr[3]
+			emit["total_votes"] = arr[4]
+			emit["reddit_id"] = arr[5]
+			emit["score"] = arr[10]
+			emit["number_of_comments"] = arr[11]
+			emit["username"] = arr[12]
+			fmt.Println(emit["reddit_id"], emit["title"])
+			Encode(self.Children[index], emit)
+			if index == length -1 {
+				index = 0
+			} else {
+				index += 1
+			}
+		}
+		fmt.Println("==========File End==========")
+		for _, vm := range self.Children {
+			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
+			checkErr(err)
+			fmt.Println("Wrote", len, "bytes")
 		}
 	}
-	fmt.Println("==========File End==========")
-	for _, vm := range self.Children {
-		len, err := connMap[vm].Write([]byte(fillString("END", 32)))
-		checkErr(err)
-		fmt.Println("Wrote", len, "bytes")
-	}
+	
 }
