@@ -7,9 +7,10 @@ import (
 	"os"
 	"strconv"
 	"encoding/json"
+	"encoding/csv"
 	"net"
 	"time"
-	"strings"
+	"io"
 )
 
 var connMap map[string]net.Conn
@@ -19,6 +20,7 @@ type Spout struct {
 	Children []string
 	LineNum int
 	Scanner *bufio.Scanner
+	Reader *csv.Reader
 }
 
 //This is a helper function that prints the error
@@ -53,8 +55,15 @@ func (self *Spout) Open() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	scanner := bufio.NewScanner(file)
-	self.Scanner = scanner
+	if self.App == "wordcount" {
+		scanner := bufio.NewScanner(file)
+		self.Scanner = scanner
+	} else if self.App == "reddit" {
+		reader := csv.NewReader(bufio.NewReader(file))
+		self.Reader = reader
+	}
+	
+	
 }
 
 func SendToBolt(machine string, jsonStr string) {
@@ -124,10 +133,13 @@ func (self *Spout) Start() {
 			checkErr(err)
 			connMap[vm] = conn
 		}
-		for self.Scanner.Scan() {
+		for {
+			arr, err := self.Reader.Read()
+			if err == io.EOF {
+				break;
+			}
 			fmt.Println("index", index)
 			self.LineNum += 1
-			arr := strings.Split(self.Scanner.Text(), ",")
 			emit := make(map[string]string)
 			emit["rawtime"] = arr[2]
 			emit["title"] = arr[3]
