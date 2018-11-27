@@ -11,6 +11,7 @@ import (
 	"sync"
 	//"io"
 	"time"
+	"sort"
 )
 
 type Bolt struct {
@@ -26,6 +27,7 @@ type Bolt struct {
 	MyMutex *sync.Mutex
 	ConnToChildren map[string]net.Conn
 	NumOfFather int
+	FilterRedditMap map[string]int
 }
 
 func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
@@ -50,6 +52,7 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 		MyMutex: mutex,
 		ConnToChildren: make(map[string]net.Conn),
 		NumOfFather: father,
+		FilterRedditMap: make(map[string]int),
 	}
 	return
 }
@@ -60,8 +63,10 @@ func (self *Bolt) BoltListen() {
 	}
 	defer self.Ln.Close()
 	if self.Type == "boltl" && self.App == "wordcount" {
-		go self.BoltlTimeToExitCheck()
-	}
+		go self.WordCountBoltlTimeToExitCheck()
+	} else if self.Type == "boltl" && self.App == "reddit" {
+                go self.FilterRedditBoltlTimeToExitCheck()
+        }
 	for true {
 		conn, err := self.Ln.Accept()
 		if err != nil {
@@ -73,7 +78,11 @@ func (self *Bolt) BoltListen() {
 			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
 			go self.HandleWordCountBoltl(conn)
-		} 
+		} else if self.Type == "boltc" && self.App == "reddit" {
+			go self.HandleFilterRedditBoltc(conn)
+		} else if self.Type == "boltl" && self.App == "reddit" {
+			go self.HandleFilterRedditBoltl(conn)
+		}
 	}
 }
 
@@ -139,9 +148,6 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
-		/*for key, value := range in {
-			fmt.Println(key, value)
-		}*/
 		out := self.WordCountFirst(in)
 		for key, value := range out {
                         fmt.Println(key, value)
@@ -193,7 +199,7 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 	}
 }
 
-func (self *Bolt) BoltlTimeToExitCheck() {
+func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 	for true {
 		if self.NumOfFather == 0 {
 			self.WriteIntoFileWordCount()
@@ -214,6 +220,124 @@ func (self *Bolt) WriteIntoFileWordCount() {
 	}
 	fmt.Println("==Successfully write wordcount file!==")
 }
+
+//reddit//
+func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
+	defer conn.Close()
+        //set up connection to children
+        for _, child := range self.Children {
+                connToChild, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
+                if err != nil {
+                        fmt.Println(err)
+                        return
+                }
+                self.ConnToChildren[child] = connToChild
+        }
+
+        for true {
+                bufferSize := make([]byte, 32)
+                _, err := conn.Read(bufferSize)
+                if err != nil {
+                        fmt.Println(err)
+                        return
+                }
+                tupleSize := strings.Trim(string(bufferSize), ":")
+                fmt.Println(tupleSize)
+                if tupleSize == "END" {
+                        for _, curr := range self.ConnToChildren {
+                                curr.Write([]byte(fillString("END", 32)))
+                        }
+                        break
+                }
+                num, _ := strconv.Atoi(tupleSize)
+                bufferTuple := make([]byte, num)
+                conn.Read(bufferTuple)
+                fmt.Println(string(bufferTuple))
+                var in map[string]string
+                json.Unmarshal(bufferTuple, &in)
+		score, err := strconv.Atoi(in["score"])
+		if score < 0 {
+			continue
+		}
+		self.SendToChildren(in)
+        }
+}
+
+func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
+	defer conn.Close()
+        for true {
+                bufferSize := make([]byte, 32)
+                _, err := conn.Read(bufferSize)
+                if err != nil {
+                        fmt.Println(err)
+                        break
+                }
+                tupleSize := strings.Trim(string(bufferSize), ":")
+                fmt.Println(tupleSize)
+                if tupleSize == "END" {
+                        self.NumOfFather -= 1
+                        break
+                }
+
+                num, _ := strconv.Atoi(tupleSize)
+                bufferTuple := make([]byte, num)
+                conn.Read(bufferTuple)
+                var in map[string]string
+                json.Unmarshal(bufferTuple, &in)
+                for key, value := range in {
+                        fmt.Println(key, value)
+                }
+                self.FilterRedditSecond(in)
+        }
+}
+
+func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
+        for true {
+                if self.NumOfFather == 0 {
+                        self.WriteIntoFileFilterReddit()
+                        break
+                }
+                time.Sleep(time.Millisecond * 500)
+        }
+}
+
+func (self *Bolt) WriteIntoFileFilterReddit() {
+	newFile, err := os.Create("local/" + self.App)
+        if err != nil {
+                fmt.Println(err)
+        }
+        defer newFile.Close()
+	//sort FilterRedditMap by number of posts in descending order
+	p := rankByWordCount(self.FilterRedditMap)
+        for i, curr := range p {
+		if i == 50 {
+			break
+		}
+                fmt.Fprintf(newFile, curr.Key + ":" + strconv.Itoa(curr.Value) + "\n")
+        }
+        fmt.Println("==Successfully write wordcount file!==")
+}
+
+func rankByWordCount(wordFrequencies map[string]int) PairList{
+  pl := make(PairList, len(wordFrequencies))
+  i := 0
+  for k, v := range wordFrequencies {
+    pl[i] = Pair{k, v}
+    i++
+  }
+  sort.Sort(sort.Reverse(pl))
+  return pl
+}
+
+type Pair struct {
+  Key string
+  Value int
+}
+
+type PairList []Pair
+func (p PairList) Len() int { return len(p) }
+func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+func (p PairList) Swap(i, j int){ p[i], p[j] = p[j], p[i] }
 ///////////////////////apps//////////////////////////////////
 func (self *Bolt) WordCountFirst(in map[string]string) map[string]string {
 	linenumber := in["linenumber"]
@@ -252,6 +376,17 @@ func (self *Bolt)WordCountSecond(in map[string]string) {
                         	self.WordCountMap[tuple[0]] = count
                 	}
 		}
+	}
+	self.MyMutex.Unlock()
+}
+
+func (self *Bolt) FilterRedditSecond(in map[string]string) {
+	username := in["username"]
+	self.MyMutex.Lock()
+	if _, ok := self.FilterRedditMap[username]; ok {
+		self.FilterRedditMap[username] += 1
+	} else {
+		self.FilterRedditMap[username] = 1
 	}
 	self.MyMutex.Unlock()
 }
