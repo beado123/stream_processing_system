@@ -242,6 +242,9 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 
 func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 	for true {
+		if self.IsActive == false {
+                        break
+                }
 		if self.NumOfFather == 0 {
 			self.WriteIntoFileWordCount()
 			break
@@ -340,6 +343,9 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 
 func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
         for true {
+		if self.IsActive == false {
+                        break
+                }
                 if self.NumOfFather == 0 {
                         self.WriteIntoFileFilterReddit()
                         break
