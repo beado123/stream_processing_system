@@ -98,6 +98,7 @@ func (self *Bolt) BoltListen() {
 			break
 		}
 	}
+	fmt.Println("bolt listen shut down")
 }
 
 func (self *Bolt) BoltListenForDOWN() {
@@ -283,7 +284,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
-                fmt.Println(tupleSize)
+                //fmt.Println(tupleSize)
                 if tupleSize == "END" {
                         for _, curr := range self.ConnToChildren {
                                 curr.Write([]byte(fillString("END", 32)))
@@ -293,7 +294,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
                 num, _ := strconv.Atoi(tupleSize)
                 bufferTuple := make([]byte, num)
                 conn.Read(bufferTuple)
-                fmt.Println(string(bufferTuple))
+                //fmt.Println(string(bufferTuple))
                 var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
 		score, err := strconv.Atoi(in["score"])
@@ -317,7 +318,7 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
-                fmt.Println(tupleSize)
+                //fmt.Println(tupleSize)
                 if tupleSize == "END" {
                         self.NumOfFather -= 1
                         break
@@ -328,9 +329,9 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)
                 var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-                for key, value := range in {
+                /*for key, value := range in {
                         fmt.Println(key, value)
-                }
+                }*/
                 self.FilterRedditSecond(in)
         }
 }
