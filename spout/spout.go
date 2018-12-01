@@ -356,20 +356,20 @@ func (self *Spout) Open() {
 }
 
 func SendToBolt(machine string, jsonStr string) {
-	fmt.Println("machine sendToBolt", machine)
-	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
-	checkErr(err)
-	fmt.Println("Wrote", len, "bytes")
-	len, err = connMap[machine].Write([]byte(jsonStr))
-	checkErr(err)
-	fmt.Println("Wrote",len, "bytes" )
+	//fmt.Println("machine sendToBolt", machine)
+	connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
+	//checkErr(err)
+	//fmt.Println("Wrote", len, "bytes")
+	connMap[machine].Write([]byte(jsonStr))
+	//checkErr(err)
+	//fmt.Println("Wrote",len, "bytes" )
 }
 
 func Encode(machine string, emit map[string]string) {
 	emitData, err := json.Marshal(emit)
 	checkErr(err)
 	jsonStr := string(emitData)
-	fmt.Println("JSON data is\n", jsonStr)
+	//fmt.Println("JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
 
@@ -466,6 +466,8 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for {
+			fmt.Fprintln(logWriter, "quit", quit)
+			//fmt.Println("quit", quit)
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
 				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
@@ -480,7 +482,7 @@ func (self *Spout) Start() {
 			if err == io.EOF {
 				break;
 			}
-			fmt.Println("index", index)
+			//fmt.Println("index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
 			emit["rawtime"] = arr[2]
@@ -490,7 +492,7 @@ func (self *Spout) Start() {
 			emit["score"] = arr[10]
 			emit["number_of_comments"] = arr[11]
 			emit["username"] = arr[12]
-			fmt.Println(emit["reddit_id"], emit["title"])
+			//fmt.Println(emit["reddit_id"], emit["title"])
 			Encode(self.Children[index], emit)
 			if index == length -1 {
 				index = 0
