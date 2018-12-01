@@ -32,7 +32,11 @@ type Bolt struct {
 	FilterRedditMap map[string]int
 }
 
+//global 
+var keep bool
+
 func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
+	keep = true
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
 	l, err := net.Listen("tcp", ip_address + ":5555")
@@ -130,6 +134,7 @@ func (self *Bolt) BoltListenForDOWN() {
 		msg := reqArr[0]
 		if(msg == "DOWN") {
 			self.IsActive = false
+			keep = false
 			fmt.Println("Receive DOWN, need to shut down!")
 			break
 		}
@@ -178,7 +183,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	}
 
 	for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
                         break
                 }
 		bufferSize := make([]byte, 32)
@@ -226,7 +231,7 @@ func (self *Bolt) SendToChildren(out map[string]string) {
 func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
         defer conn.Close()
         for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
                         break
                 }
 		bufferSize := make([]byte, 32)
@@ -257,7 +262,7 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 
 func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 	for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
                         break
                 }
 		if self.NumOfFather == 0 {
@@ -294,7 +299,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
         }
 
         for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
 			break
 		}
                 bufferSize := make([]byte, 32)
@@ -328,7 +333,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
 func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 	defer conn.Close()
         for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
                 	break
                 }
                 bufferSize := make([]byte, 32)
@@ -358,7 +363,7 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 
 func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
         for true {
-		if self.IsActive == false {
+		if self.IsActive == false || keep == false{
                         break
                 }
                 if self.NumOfFather == 0 {
