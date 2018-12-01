@@ -107,6 +107,7 @@ func Encode(machine string, emit map[string]string) {
 	checkErr(err)
 	jsonStr := string(emitData)
 	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
+	fmt.Println("JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
 
@@ -151,7 +152,7 @@ func (self *Spout) Start() {
 	checkErr(err)
 	logWriter = io.MultiWriter(file)
 
-	go self.listenFromNimbus()	
+	//go self.listenFromNimbus()	
 
 	if(self.App == "wordcount"){
 
@@ -215,9 +216,11 @@ func (self *Spout) Start() {
 			}
 			arr, err := self.Reader.Read()
 			if err == io.EOF {
+				fmt.Fprintln(logWriter, "EOF")
+				fmt.Println("EOF")
 				break;
 			}
-			//fmt.Println("index", index)
+			fmt.Fprintln(logWriter, "index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
 			emit["rawtime"] = arr[2]
@@ -227,7 +230,7 @@ func (self *Spout) Start() {
 			emit["score"] = arr[10]
 			emit["number_of_comments"] = arr[11]
 			emit["username"] = arr[12]
-			//fmt.Println(emit["reddit_id"], emit["title"])
+			fmt.Fprintln(logWriter, emit["reddit_id"], emit["title"])
 			Encode(self.Children[index], emit)
 			if index == length -1 {
 				index = 0
