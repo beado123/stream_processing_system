@@ -11,14 +11,20 @@ import (
 	"net"
 	"time"
 	"io"
+	"io/ioutil"
+	"strings"
 )
 
 var connMap map[string]net.Conn
+var acceptMachineAddr *net.UDPAddr
+var selfId string
+
 type Spout struct {
 	App string
 	FilePath string
 	Children []string
 	LineNum int
+	isActive bool
 	Scanner *bufio.Scanner
 	Reader *csv.Reader
 }
@@ -28,6 +34,24 @@ func checkErr(err error) {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
+}
+
+//This function extracts ip address of current VM from file "ip_address" in current directory
+func getIPAddr() string{
+
+	data, err := ioutil.ReadFile("ip_address")
+	if err != nil {
+		panic(err)
+	}
+
+	ip := string(data[:len(data)])
+	
+	//remove \n from end of line
+	if strings.HasSuffix(ip, "\n") {
+		ip = ip[:(len(ip) - 1)]
+	}
+	fmt.Println("ip address of current VM:", ip)
+	return ip
 }
 
 //This function fill string into specific length by :
@@ -48,6 +72,7 @@ func (self *Spout) Init(filePath string, app string, children []string) {
 	self.App = app
 	self.Children = children
 	self.LineNum = 0
+	self.isActive = true
 }
 
 func (self *Spout) Open() {
@@ -83,8 +108,42 @@ func Encode(machine string, emit map[string]string) {
 	fmt.Println("JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
+ 
+func (self *Spout) listenFromNimbus() {
+
+	//get ip address from servers list	
+	ip := getIPAddr()
+	selfId = ip[15:17]
+
+	addr := net.UDPAddr{
+		Port: 4444,
+		IP: net.ParseIP(ip),
+	}
+	
+	/* Now listen at selected port */
+    ser, err := net.ListenUDP("udp", &addr)
+
+    checkErr(err)
+    defer ser.Close()
+
+	fmt.Println("Spout Listening udp on port 4444")
+
+	//Listen for incoming connections
+	buf := make([]byte, 1024)
+
+    for {
+        n, remoteAddr, err := ser.ReadFromUDP(buf)
+		checkErr(err)
+		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
+		self.isActive = false
+		break
+	}
+}
+
 
 func (self *Spout) Start() {
+	
+	go self.listenFromNimbus()
 
 	if(self.App == "wordcount"){
 
@@ -100,6 +159,10 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for self.Scanner.Scan() {
+
+			if self.isActive == false {
+				return
+			}
 			fmt.Println("index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
@@ -134,6 +197,10 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for {
+
+			if self.isActive == false {
+				return
+			}
 			arr, err := self.Reader.Read()
 			if err == io.EOF {
 				break;

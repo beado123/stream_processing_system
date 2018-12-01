@@ -9,12 +9,14 @@ import (
 	"strings"
 	"io/ioutil"
 	"strconv"
+	"time"
 )
 
 //MP4
 var workers []string
 var numOfWorker int
 var app string
+var newGroup []string
 
 //MP3
 var m map[string][]string
@@ -100,7 +102,7 @@ func writeToPinger(machineNum string, content string) {
 	} else {
 		
 		fmt.Fprintln(logWriter, "Broadcast to ", machineNum, " content: ", content)
-		conn, err := net.Dial("udp", fmt.Sprintf("%s%s", ips[machineNum], ":3333"))
+		conn, err := net.Dial("udp", fmt.Sprintf("%s%s", ips[machineNum], ":4444"))
 		checkErr(err)
 		_, err = conn.Write([]byte(content))
 		checkErr(err)
@@ -281,9 +283,14 @@ func parseUDPRequest(buf []byte, length int) {
 		fmt.Printf("%s is down\n", machine)
 		removeFromList(machine)
 		sendMembershipListToPinger()
+		broadcast("DOWN", machine)
+		time.Sleep(time.Millisecond* 1000)
 		//delete crashed machine from membership list
 		//reassignFilesToOtherVM(machine)
-		fmt.Println("updated membership list:",lst)		
+		fmt.Println("updated membership list:",lst)	
+		numOfWorker	= len(lst)
+		fmt.Println("number of worker", numOfWorker)
+		sendJobToWorker()
 
 	} else if command == "LEAVE" {
 		joinMachineNum = ""
@@ -585,6 +592,7 @@ func startMaster() {
 
 
 //This function parses requests of App(wordCount...) sent by VMs other than master 
+//APP numOfWorker
 func parseRequestNimbus(conn net.Conn) {
 
 	fmt.Println("in parseRequestNimnus")
@@ -596,8 +604,8 @@ func parseRequestNimbus(conn net.Conn) {
 	//convert request command into array
 	reqArr := strings.Split(string(buf[:reqLen]), " ")
 	
-	fmt.Println(reqArr)
-
+	fmt.Println(reqArr)	
+	
 	app = reqArr[0]
 	workers := reqArr[1]
 	workers = workers[:(len(workers)-1)]
@@ -618,6 +626,9 @@ func sendJobToWorker() {
 	for i:= 1; i< len(lst)-1; i++ {
 		bolts = append(bolts, lst[i])
 	}
+	fmt.Println("spout", lst[0])
+	fmt.Println("bolts", bolts)
+	fmt.Println("boltl", lst[numOfWorker-1])
 	resultCollector := lst[numOfWorker-1]
 
 	//send job to spout
