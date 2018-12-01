@@ -1,4 +1,4 @@
-package spout
+/*package spout
 
 import (
 	"bufio"
@@ -253,9 +253,9 @@ func (self *Spout) Start() {
 		}
 	}
 	
-}
+}*/
 
-/*
+
 package spout
 
 import (
@@ -466,7 +466,7 @@ func (self *Spout) Start() {
 			} else {
 				index += 1
 			}
-			time.Sleep(time.Millisecond* 50)
+			//time.Sleep(time.Millisecond* 50)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
@@ -476,5 +476,5 @@ func (self *Spout) Start() {
 		}
 	}
 	
-}*/
+}
 
