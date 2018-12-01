@@ -94,10 +94,10 @@ func (self *Spout) Open() {
 
 func SendToBolt(machine string, jsonStr string) {
 	//fmt.Println("machine sendToBolt", machine)
-	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
+	_, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
 	//fmt.Println("Wrote", len, "bytes")
-	len, err = connMap[machine].Write([]byte(jsonStr))
+	_, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
 	//fmt.Println("Wrote",len, "bytes" )
 }
@@ -128,6 +128,7 @@ func (self *Spout) listenFromNimbus() {
     defer ser.Close()
 
 	fmt.Println("Spout Listening udp on port 4444")
+	fmt.Fprintln(logWriter, "Spout Listening udp on port 4444")
 
 	//Listen for incoming connections
 	buf := make([]byte, 1024)
@@ -136,6 +137,7 @@ func (self *Spout) listenFromNimbus() {
         n, remoteAddr, err := ser.ReadFromUDP(buf)
 		checkErr(err)
 		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
+		fmt.Fprintln(logWriter,  "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
 		self.isActive = false
 		break
 	}
