@@ -365,7 +365,7 @@ func Encode(machine string, emit map[string]string) {
 	emitData, err := json.Marshal(emit)
 	checkErr(err)
 	jsonStr := string(emitData)
-	//fmt.Println("JSON data is\n", jsonStr)
+	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
 
@@ -395,7 +395,7 @@ func (self *Spout) listenFromNimbus() {
     for {
         n, remoteAddr, err := ser.ReadFromUDP(buf)
 		checkErr(err)
-		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
+		fmt.Println( "=============\nReceived a message from %v:%s", remoteAddr, string(buf[:n]))
 		fmt.Fprintln(logWriter,  "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
 		quit = false
 		break
