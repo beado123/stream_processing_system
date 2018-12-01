@@ -243,7 +243,7 @@ func (self *Spout) Start() {
 				index += 1
 			}
 			fmt.Fprintln(logWriter, "one iteration ends")
-			time.Sleep(time.Millisecond* 100)
+			time.Sleep(time.Millisecond* 50)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
@@ -396,7 +396,7 @@ func (self *Spout) listenFromNimbus() {
 
 func (self *Spout) Start() {
 
-	go listenFromNimbus()
+	//go listenFromNimbus()
 	if(self.App == "wordcount"){
 
 		index := 0
@@ -466,7 +466,7 @@ func (self *Spout) Start() {
 			} else {
 				index += 1
 			}
-			time.Sleep(time.Millisecond* 200)
+			time.Sleep(time.Millisecond* 50)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
