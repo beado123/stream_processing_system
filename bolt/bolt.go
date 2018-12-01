@@ -104,13 +104,15 @@ func (self *Bolt) BoltListen() {
 func (self *Bolt) BoltListenForDOWN() {
 	defer self.Ser.Close();
 	buf := make([]byte, 1024)
+	//fmt.Println("hello")
 	for true {
 		reqLen, _, err := self.Ser.ReadFromUDP(buf)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		msg := string(buf[:reqLen])
+		reqArr := strings.Split(string(buf[:reqLen]), " ")
+		msg := reqArr[0]
 		if(msg == "DOWN") {
 			self.IsActive = false
 			fmt.Println("Receive DOWN, need to shut down!")
