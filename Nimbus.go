@@ -105,7 +105,7 @@ func writeToPinger(machineNum string, content string) {
 			port = "4444"
 		}
 		fmt.Fprintln(logWriter, "Broadcast to ", machineNum, " content: ", content)
-		fmt.Println("Using port", port)
+		fmt.FPrintln(logWriter, "Using port", port)
 		conn, err := net.Dial("udp", fmt.Sprintf("%s:%s", ips[machineNum], port))
 		checkErr(err)
 		_, err = conn.Write([]byte(content))
