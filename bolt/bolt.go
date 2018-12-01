@@ -78,22 +78,26 @@ func (self *Bolt) BoltListen() {
 	} else if self.Type == "boltl" && self.App == "reddit" {
                 go self.FilterRedditBoltlTimeToExitCheck()
         }
+	var conn net.Conn
 	for true {
-		conn, err := self.Ln.Accept()
+		conn1, err := self.Ln.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		if self.Type == "boltc" && self.App == "wordcount" {
-			go self.HandleWordCountBoltc(conn)
-		} else if self.Type == "boltl" && self.App == "wordcount" {
-			go self.HandleWordCountBoltl(conn)
-		} else if self.Type == "boltc" && self.App == "reddit" {
-			go self.HandleFilterRedditBoltc(conn)
-		} else if self.Type == "boltl" && self.App == "reddit" {
-			go self.HandleFilterRedditBoltl(conn)
-		}
+		conn = conn1
+		break
 	}
+		if self.Type == "boltc" && self.App == "wordcount" {
+			self.HandleWordCountBoltc(conn)
+		} else if self.Type == "boltl" && self.App == "wordcount" {
+			self.HandleWordCountBoltl(conn)
+		} else if self.Type == "boltc" && self.App == "reddit" {
+			self.HandleFilterRedditBoltc(conn)
+		} else if self.Type == "boltl" && self.App == "reddit" {
+			self.HandleFilterRedditBoltl(conn)
+		}
+	//}
 	//fmt.Println("bolt listen shut down")
 }
 
