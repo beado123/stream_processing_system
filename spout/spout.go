@@ -161,6 +161,7 @@ func (self *Spout) Start() {
 		for self.Scanner.Scan() {
 
 			if self.isActive == false {
+				fmt.Println("Spout detected failure! Drop task...")
 				return
 			}
 			fmt.Println("index", index)
@@ -199,6 +200,7 @@ func (self *Spout) Start() {
 		for {
 
 			if self.isActive == false {
+				fmt.Println("Spout detected failure! Drop task...")
 				return
 			}
 			arr, err := self.Reader.Read()
