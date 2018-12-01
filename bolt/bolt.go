@@ -19,6 +19,8 @@ type Bolt struct {
 	VmIpAddress string
 	Ln net.Listener
 	PortTCP string
+	Ser *net.UDPConn
+	PortUDP string
 	Children []string	
 	IsActive bool
 	Type string
@@ -38,12 +40,23 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 		fmt.Println(err)
                 return
 	}
+	addr := net.UDPAddr{
+        	Port: 4444,
+        	IP: net.ParseIP(ip_address),
+    	}
+	ser, err := net.ListenUDP("udp", &addr)
+	if err != nil {
+        	fmt.Println("Failed to set up listener! Error: ", err)
+        	return
+    	}
 	mutex := &sync.Mutex{}
 	b = &Bolt {
 		VmId: vm_id,
 		VmIpAddress: ip_address,
 		Ln: l,
 		PortTCP: "5555",
+		Ser: ser,	
+		PortUDP: "4444",
 		Children: children,
 		IsActive: true,
 		Type: t,		
@@ -58,9 +71,6 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 }
 
 func (self *Bolt) BoltListen() {
-	if self.IsActive == false {
-		return
-	}
 	defer self.Ln.Close()
 	if self.Type == "boltl" && self.App == "wordcount" {
 		go self.WordCountBoltlTimeToExitCheck()
@@ -75,13 +85,35 @@ func (self *Bolt) BoltListen() {
 		}
 		//fmt.Println("TCP Accept:", conn.RemoteAddr().String())
 		if self.Type == "boltc" && self.App == "wordcount" {
-			go self.HandleWordCountBoltc(conn)
+			self.HandleWordCountBoltc(conn)
+			break
 		} else if self.Type == "boltl" && self.App == "wordcount" {
-			go self.HandleWordCountBoltl(conn)
+			self.HandleWordCountBoltl(conn)
+			break
 		} else if self.Type == "boltc" && self.App == "reddit" {
-			go self.HandleFilterRedditBoltc(conn)
+			self.HandleFilterRedditBoltc(conn)
+			break
 		} else if self.Type == "boltl" && self.App == "reddit" {
-			go self.HandleFilterRedditBoltl(conn)
+			self.HandleFilterRedditBoltl(conn)
+			break
+		}
+	}
+}
+
+func (self *Bolt) BoltListenForDOWN() {
+	defer self.Ser.Close();
+	buf := make([]byte, 1024)
+	for true {
+		reqLen, _, err := self.Ser.ReadFromUDP(buf)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		msg := string(buf[:reqLen])
+		if(msg == "DOWN") {
+			self.IsActive = false
+			fmt.Println("Receive DOWN, need to shut down!")
+			break
 		}
 	}
 }
@@ -128,6 +160,9 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	}
 
 	for true {
+		if self.IsActive == false {
+                        break
+                }
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
                 if err != nil {
@@ -173,6 +208,9 @@ func (self *Bolt) SendToChildren(out map[string]string) {
 func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
         defer conn.Close()
         for true {
+		if self.IsActive == false {
+                        break
+                }
 		bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
@@ -235,11 +273,14 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
         }
 
         for true {
+		if self.IsActive == false {
+			break
+		}
                 bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
                         fmt.Println(err)
-                        return
+                        break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
                 fmt.Println(tupleSize)
@@ -266,6 +307,9 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
 func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 	defer conn.Close()
         for true {
+		if self.IsActive == false {
+                	break
+                }
                 bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
