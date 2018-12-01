@@ -277,6 +277,7 @@ var connMap map[string]net.Conn
 var acceptMachineAddr *net.UDPAddr
 var selfId string
 var logWriter io.Writer
+var quit bool
 
 type Spout struct {
 	App string
@@ -401,6 +402,7 @@ func (self *Spout) listenFromNimbus() {
 		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
 		fmt.Fprintln(logWriter,  "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
 		self.setIsActive(false)
+		quit = false
 		break
 	}
 }
@@ -412,6 +414,8 @@ func (self *Spout) Start() {
 	file, err := os.Create("logger")
 	checkErr(err)
 	logWriter = io.MultiWriter(file)
+
+	quit = true
 
 	go self.listenFromNimbus()
 	if(self.App == "wordcount"){
@@ -464,6 +468,11 @@ func (self *Spout) Start() {
 		for {
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
+				return
+			}
+			if quit == false {
+				fmt.Println("Quit Spout detected failure! Drop task...")
 				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
