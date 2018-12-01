@@ -81,6 +81,7 @@ func (self *Spout) Open() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	//defer file.Close()
 	if self.App == "wordcount" {
 		scanner := bufio.NewScanner(file)
 		self.Scanner = scanner
@@ -93,13 +94,14 @@ func (self *Spout) Open() {
 }
 
 func SendToBolt(machine string, jsonStr string) {
-	//fmt.Println("machine sendToBolt", machine)
-	_, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
+	fmt.Fprintln(logWriter, "machine sendToBolt", machine)
+	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
-	//fmt.Println("Wrote", len, "bytes")
-	_, err = connMap[machine].Write([]byte(jsonStr))
+	fmt.Fprintln(logWriter, "Wrote", len, "bytes")
+	len, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
-	//fmt.Println("Wrote",len, "bytes" )
+	fmt.Fprintln(logWriter, "Wrote",len, "bytes" )
+	fmt.Fprintln(logWriter, "sendToBolt return")
 }
 
 func Encode(machine string, emit map[string]string) {
@@ -109,6 +111,7 @@ func Encode(machine string, emit map[string]string) {
 	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
 	fmt.Println("JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
+	fmt.Fprintln(logWriter, "Encode return")
 }
 
 func (self *Spout) listenFromNimbus() {
@@ -208,13 +211,15 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for {
-
+			fmt.Fprintln(logWriter, "ready to read")
+			fmt.Println("ready to read")
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
 				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
 			arr, err := self.Reader.Read()
+			checkErr(err)
 			if err == io.EOF {
 				fmt.Fprintln(logWriter, "EOF")
 				fmt.Println("EOF")
@@ -237,6 +242,7 @@ func (self *Spout) Start() {
 			} else {
 				index += 1
 			}
+			fmt.Fprintln(logWriter, "one iteration ends")
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
