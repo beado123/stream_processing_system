@@ -146,11 +146,12 @@ func (self *Spout) listenFromNimbus() {
 
 func (self *Spout) Start() {
 	
-	go self.listenFromNimbus()
 	//create local log file for debugging
 	file, err := os.Create("logger")
 	checkErr(err)
 	logWriter = io.MultiWriter(file)
+
+	go self.listenFromNimbus()	
 
 	if(self.App == "wordcount"){
 
