@@ -106,7 +106,7 @@ func Encode(machine string, emit map[string]string) {
 	emitData, err := json.Marshal(emit)
 	checkErr(err)
 	jsonStr := string(emitData)
-	fmt.Fprintf(logWriter, "JSON data is\n", jsonStr)
+	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
  
@@ -167,7 +167,7 @@ func (self *Spout) Start() {
 
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
-				fmt.Fprintf(logWriter, "Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
 			//fmt.Println("index", index)
@@ -175,7 +175,7 @@ func (self *Spout) Start() {
 			emit := make(map[string]string)
 			emit["linenumber"] = strconv.Itoa(self.LineNum)
 			emit["line"] = self.Scanner.Text()
-			fmt.Fprintf(logWriter, emit["linenumber"], emit["line"])
+			fmt.Fprintln(logWriter, emit["linenumber"], emit["line"])
 			Encode(self.Children[index], emit)
 			if index == length -1 {
 				index = 0
@@ -187,7 +187,7 @@ func (self *Spout) Start() {
 		for _, vm := range self.Children {
 			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
 			checkErr(err)
-			fmt.Fprintf(logWriter, "Wrote", len, "bytes")
+			fmt.Fprintln(logWriter, "Wrote", len, "bytes")
 		}
 
 	} else if(self.App == "reddit"){
@@ -207,7 +207,7 @@ func (self *Spout) Start() {
 
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
-				fmt.Fprintf(logWriter, "Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
 			arr, err := self.Reader.Read()
