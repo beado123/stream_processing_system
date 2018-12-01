@@ -331,6 +331,7 @@ func (self *Spout) Init(filePath string, app string, children []string) {
 	self.App = app
 	self.Children = children
 	self.LineNum = 0
+	self.isActive = true
 }
 
 func (self *Spout) Open() {
