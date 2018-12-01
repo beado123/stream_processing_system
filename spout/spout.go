@@ -18,6 +18,7 @@ import (
 var connMap map[string]net.Conn
 var acceptMachineAddr *net.UDPAddr
 var selfId string
+var logWriter io.Writer
 
 type Spout struct {
 	App string
@@ -105,7 +106,7 @@ func Encode(machine string, emit map[string]string) {
 	emitData, err := json.Marshal(emit)
 	checkErr(err)
 	jsonStr := string(emitData)
-	fmt.Println("JSON data is\n", jsonStr)
+	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
  
@@ -144,6 +145,10 @@ func (self *Spout) listenFromNimbus() {
 func (self *Spout) Start() {
 	
 	go self.listenFromNimbus()
+	//create local log file for debugging
+	file, err := os.Create("logger")
+	checkErr(err)
+	logWriter = io.MultiWriter(file)
 
 	if(self.App == "wordcount"){
 
@@ -152,9 +157,9 @@ func (self *Spout) Start() {
 		connMap = make(map[string]net.Conn)
 		time.Sleep(time.Millisecond* 1000)
 		for _, vm := range self.Children {
-			fmt.Println("vm", vm)
+			//fmt.Println("vm", vm)
 			conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
-			fmt.Println("conn", conn)
+			//fmt.Println("conn", conn)
 			checkErr(err)
 			connMap[vm] = conn
 		}
@@ -162,14 +167,15 @@ func (self *Spout) Start() {
 
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
-			fmt.Println("index", index)
+			//fmt.Println("index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
 			emit["linenumber"] = strconv.Itoa(self.LineNum)
 			emit["line"] = self.Scanner.Text()
-			fmt.Println(emit["linenumber"], emit["line"])
+			fmt.Fprintln(logWriter, emit["linenumber"], emit["line"])
 			Encode(self.Children[index], emit)
 			if index == length -1 {
 				index = 0
@@ -181,7 +187,7 @@ func (self *Spout) Start() {
 		for _, vm := range self.Children {
 			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
 			checkErr(err)
-			fmt.Println("Wrote", len, "bytes")
+			fmt.Fprintln(logWriter, "Wrote", len, "bytes")
 		}
 
 	} else if(self.App == "reddit"){
@@ -191,9 +197,9 @@ func (self *Spout) Start() {
 		connMap = make(map[string]net.Conn)
 		time.Sleep(time.Millisecond* 1000)
 		for _, vm := range self.Children {
-			fmt.Println("vm", vm)
+			//fmt.Println("vm", vm)
 			conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
-			fmt.Println("conn", conn)
+			//fmt.Println("conn", conn)
 			checkErr(err)
 			connMap[vm] = conn
 		}
@@ -201,13 +207,14 @@ func (self *Spout) Start() {
 
 			if self.isActive == false {
 				fmt.Println("Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
 			arr, err := self.Reader.Read()
 			if err == io.EOF {
 				break;
 			}
-			fmt.Println("index", index)
+			//fmt.Println("index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
 			emit["rawtime"] = arr[2]
@@ -217,7 +224,7 @@ func (self *Spout) Start() {
 			emit["score"] = arr[10]
 			emit["number_of_comments"] = arr[11]
 			emit["username"] = arr[12]
-			fmt.Println(emit["reddit_id"], emit["title"])
+			//fmt.Println(emit["reddit_id"], emit["title"])
 			Encode(self.Children[index], emit)
 			if index == length -1 {
 				index = 0
@@ -227,9 +234,9 @@ func (self *Spout) Start() {
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
-			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
+			_, err := connMap[vm].Write([]byte(fillString("END", 32)))
 			checkErr(err)
-			fmt.Println("Wrote", len, "bytes")
+			//fmt.Println("Wrote", len, "bytes")
 		}
 	}
 	
