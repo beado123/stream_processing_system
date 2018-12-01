@@ -71,7 +71,7 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 }
 
 func (self *Bolt) BoltListen() {
-	go self.BoltListenForDOWN()
+	//go self.BoltListenForDOWN()
 	defer self.Ln.Close()
 	if self.Type == "boltl" && self.App == "wordcount" {
 		go self.WordCountBoltlTimeToExitCheck()
@@ -84,22 +84,17 @@ func (self *Bolt) BoltListen() {
 			fmt.Println(err)
 			return
 		}
-		//fmt.Println("TCP Accept:", conn.RemoteAddr().String())
 		if self.Type == "boltc" && self.App == "wordcount" {
-			self.HandleWordCountBoltc(conn)
-			break
+			go self.HandleWordCountBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "wordcount" {
-			self.HandleWordCountBoltl(conn)
-			break
+			go self.HandleWordCountBoltl(conn)
 		} else if self.Type == "boltc" && self.App == "reddit" {
-			self.HandleFilterRedditBoltc(conn)
-			break
+			go self.HandleFilterRedditBoltc(conn)
 		} else if self.Type == "boltl" && self.App == "reddit" {
-			self.HandleFilterRedditBoltl(conn)
-			break
+			go self.HandleFilterRedditBoltl(conn)
 		}
 	}
-	fmt.Println("bolt listen shut down")
+	//fmt.Println("bolt listen shut down")
 }
 
 func (self *Bolt) BoltListenForDOWN() {
