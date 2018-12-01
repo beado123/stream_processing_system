@@ -18,7 +18,7 @@ var appMap map[string]string
 func main() {
 
 	appMap = make(map[string]string)
-	appMap["wordcount"] = "./wordcount_dataset"
+	appMap["wordcount"] = "./reddit_dataset.csv"
 	appMap["reddit"] = "./reddit_dataset"
 
 	if len(os.Args) < 2 {
@@ -122,6 +122,7 @@ func ParseRequest(conn net.Conn) {
 			fmt.Println(curr)
 		}
 		bolt := bolt.NewBolt(t, app, children, father)
+		go bolt.BoltListenForDOWN()
 		bolt.BoltListen()
 		
 	} else if reqArr[0] == "boltl" {
@@ -136,6 +137,7 @@ func ParseRequest(conn net.Conn) {
                         fmt.Println(curr)
                 }
 		bolt := bolt.NewBolt(t, app, children, father)
+		go bolt.BoltListenForDOWN()
 		bolt.BoltListen()
 	} else if reqArr[0] == "spout" {
 		t := reqArr[0]
