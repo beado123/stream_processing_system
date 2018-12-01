@@ -1,4 +1,4 @@
-/*package bolt
+package bolt
 
 import (
 	"fmt"
@@ -71,6 +71,7 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 }
 
 func (self *Bolt) BoltListen() {
+	go self.BoltListenForDOWN()
 	defer self.Ln.Close()
 	if self.Type == "boltl" && self.App == "wordcount" {
 		go self.WordCountBoltlTimeToExitCheck()
@@ -442,9 +443,9 @@ func (self *Bolt) FilterRedditSecond(in map[string]string) {
 		self.FilterRedditMap[username] = 1
 	}
 	self.MyMutex.Unlock()
-}*/
+}
 
-
+/*
 package bolt
 
 import (
@@ -837,4 +838,4 @@ func (self *Bolt) FilterRedditSecond(in map[string]string) {
 	}
 	self.MyMutex.Unlock()
 }
-
+*/
