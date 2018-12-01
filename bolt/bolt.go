@@ -34,8 +34,10 @@ type Bolt struct {
 
 //global 
 var keep bool
+var wg sync.WaitGroup
 
 func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
+	wg.Add(1)
 	keep = true
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
@@ -117,6 +119,9 @@ func (self *Bolt) BoltListen() {
 			self.HandleFilterRedditBoltl(conn)
 		}
 	//}
+	if self.Type == "boltl" {
+		wg.Wait()
+	}
 	fmt.Println("bolt listen shut down")
 }
 
@@ -263,6 +268,7 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 	for true {
 		if self.IsActive == false || keep == false{
+			wg.Done()
                         break
                 }
 		if self.NumOfFather == 0 {
@@ -276,6 +282,7 @@ func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 func (self *Bolt) WriteIntoFileWordCount() {
 	newFile, err := os.Create("local/" + self.App)
 	if err != nil {
+		wg.Done()
 		fmt.Println(err)
 	}
 	defer newFile.Close()
@@ -283,6 +290,7 @@ func (self *Bolt) WriteIntoFileWordCount() {
 		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count) + "\n")
 	}
 	fmt.Println("==Successfully write wordcount file!==")
+	wg.Done()
 }
 
 //reddit//
@@ -364,6 +372,7 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
         for true {
 		if self.IsActive == false || keep == false{
+			wg.Done()
                         break
                 }
                 if self.NumOfFather == 0 {
@@ -377,6 +386,7 @@ func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
 func (self *Bolt) WriteIntoFileFilterReddit() {
 	newFile, err := os.Create("local/" + self.App)
         if err != nil {
+		wg.Done()
                 fmt.Println(err)
         }
         defer newFile.Close()
@@ -389,6 +399,7 @@ func (self *Bolt) WriteIntoFileFilterReddit() {
                 fmt.Fprintf(newFile, curr.Key + ":" + strconv.Itoa(curr.Value) + "\n")
         }
         fmt.Println("==Successfully write wordcount file!==")
+	wg.Done()
 }
 
 func rankByWordCount(wordFrequencies map[string]int) PairList{
