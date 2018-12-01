@@ -288,6 +288,10 @@ type Spout struct {
 	Reader *csv.Reader
 }
 
+func (self *Spout) setIsActive(active bool) {
+	self.isActive = active
+}
+
 //This is a helper function that prints the error
 func checkErr(err error) {
 	if err != nil {
@@ -396,7 +400,7 @@ func (self *Spout) listenFromNimbus() {
 		checkErr(err)
 		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
 		fmt.Fprintln(logWriter,  "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
-		self.isActive = false
+		self.setIsActive(false)
 		break
 	}
 }
