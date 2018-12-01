@@ -71,7 +71,7 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 }
 
 func (self *Bolt) BoltListen() {
-	//go self.BoltListenForDOWN()
+	go self.BoltListenForDOWN()
 	defer self.Ln.Close()
 	if self.Type == "boltl" && self.App == "wordcount" {
 		go self.WordCountBoltlTimeToExitCheck()
