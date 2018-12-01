@@ -1,4 +1,4 @@
-/*package spout
+package spout
 
 import (
 	"bufio"
@@ -243,6 +243,7 @@ func (self *Spout) Start() {
 				index += 1
 			}
 			fmt.Fprintln(logWriter, "one iteration ends")
+			time.Sleep(time.Millisecond* 100)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
@@ -252,7 +253,9 @@ func (self *Spout) Start() {
 		}
 	}
 	
-}*/
+}
+
+/*
 package spout
 
 import (
@@ -283,6 +286,24 @@ func checkErr(err error) {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
+}
+
+//This function extracts ip address of current VM from file "ip_address" in current directory
+func getIPAddr() string{
+
+	data, err := ioutil.ReadFile("ip_address")
+	if err != nil {
+		panic(err)
+	}
+
+	ip := string(data[:len(data)])
+	
+	//remove \n from end of line
+	if strings.HasSuffix(ip, "\n") {
+		ip = ip[:(len(ip) - 1)]
+	}
+	fmt.Println("ip address of current VM:", ip)
+	return ip
 }
 
 //This function fill string into specific length by :
@@ -339,8 +360,43 @@ func Encode(machine string, emit map[string]string) {
 	SendToBolt(machine, jsonStr)
 }
 
+func (self *Spout) listenFromNimbus() {
+
+	//get ip address from servers list	
+	ip := getIPAddr()
+	selfId = ip[15:17]
+
+	addr := net.UDPAddr{
+		Port: 4444,
+		IP: net.ParseIP(ip),
+	}
+	
+
+    ser, err := net.ListenUDP("udp", &addr)
+
+    checkErr(err)
+    defer ser.Close()
+
+	fmt.Println("Spout Listening udp on port 4444")
+	fmt.Fprintln(logWriter, "Spout Listening udp on port 4444")
+
+	//Listen for incoming connections
+	buf := make([]byte, 1024)
+
+    for {
+        n, remoteAddr, err := ser.ReadFromUDP(buf)
+		checkErr(err)
+		fmt.Println( "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
+		fmt.Fprintln(logWriter,  "=============\nReceived a message from %v:%s \n", remoteAddr, string(buf[:n]))
+		self.isActive = false
+		break
+	}
+}
+
+
 func (self *Spout) Start() {
 
+	go listenFromNimbus()
 	if(self.App == "wordcount"){
 
 		index := 0
@@ -420,5 +476,5 @@ func (self *Spout) Start() {
 		}
 	}
 	
-}
+}*/
 
