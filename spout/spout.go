@@ -331,6 +331,7 @@ func (self *Spout) Init(filePath string, app string, children []string) {
 	self.App = app
 	self.Children = children
 	self.LineNum = 0
+	self.isActive = true
 }
 
 func (self *Spout) Open() {
@@ -403,7 +404,12 @@ func (self *Spout) listenFromNimbus() {
 
 func (self *Spout) Start() {
 
-	//go listenFromNimbus()
+	//create local log file for debugging
+	file, err := os.Create("logger")
+	checkErr(err)
+	logWriter = io.MultiWriter(file)
+
+	go self.listenFromNimbus()
 	if(self.App == "wordcount"){
 
 		index := 0
@@ -452,6 +458,11 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for {
+			if self.isActive == false {
+				fmt.Println("Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
+				return
+			}
 			arr, err := self.Reader.Read()
 			if err == io.EOF {
 				break;
