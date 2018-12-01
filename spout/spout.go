@@ -93,13 +93,13 @@ func (self *Spout) Open() {
 }
 
 func SendToBolt(machine string, jsonStr string) {
-	fmt.Println("machine sendToBolt", machine)
+	//fmt.Println("machine sendToBolt", machine)
 	len, err := connMap[machine].Write([]byte(fillString(strconv.Itoa(len(jsonStr)), 32)))
 	checkErr(err)
-	fmt.Println("Wrote", len, "bytes")
+	//fmt.Println("Wrote", len, "bytes")
 	len, err = connMap[machine].Write([]byte(jsonStr))
 	checkErr(err)
-	fmt.Println("Wrote",len, "bytes" )
+	//fmt.Println("Wrote",len, "bytes" )
 }
 
 func Encode(machine string, emit map[string]string) {
@@ -109,7 +109,7 @@ func Encode(machine string, emit map[string]string) {
 	fmt.Fprintln(logWriter, "JSON data is\n", jsonStr)
 	SendToBolt(machine, jsonStr)
 }
- 
+
 func (self *Spout) listenFromNimbus() {
 
 	//get ip address from servers list	
