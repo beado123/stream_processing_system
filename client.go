@@ -18,8 +18,8 @@ var appMap map[string]string
 func main() {
 
 	appMap = make(map[string]string)
-	appMap["wordcount"] = "./reddit_dataset.csv"
-	appMap["reddit"] = "./reddit_dataset"
+	appMap["wordcount"] = "./wordcount_dataset"
+	appMap["reddit"] = "./reddit_dataset.csv"
 
 	if len(os.Args) < 2 {
 		fmt.Println("Please type in master id!")
