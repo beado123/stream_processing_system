@@ -269,14 +269,21 @@ import (
 	"net"
 	"time"
 	"io"
+	"io/ioutil"
+	"strings"
 )
 
 var connMap map[string]net.Conn
+var acceptMachineAddr *net.UDPAddr
+var selfId string
+var logWriter io.Writer
+
 type Spout struct {
 	App string
 	FilePath string
 	Children []string
 	LineNum int
+	isActive bool
 	Scanner *bufio.Scanner
 	Reader *csv.Reader
 }
