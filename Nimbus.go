@@ -100,9 +100,12 @@ func writeToPinger(machineNum string, content string) {
 		}
 	//write updated membership list to other machines
 	} else {
-		
+		port := "3333"
+		if content[0:4] == "DOWN" {
+			port = "4444"
+		}
 		fmt.Fprintln(logWriter, "Broadcast to ", machineNum, " content: ", content)
-		conn, err := net.Dial("udp", fmt.Sprintf("%s%s", ips[machineNum], ":4444"))
+		conn, err := net.Dial("udp", fmt.Sprintf("%s:%s", ips[machineNum], port))
 		checkErr(err)
 		_, err = conn.Write([]byte(content))
 		checkErr(err)
