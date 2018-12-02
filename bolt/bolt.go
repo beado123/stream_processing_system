@@ -35,9 +35,9 @@ type Bolt struct {
 var wg sync.WaitGroup
 
 func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
-	if app == "boltc" {
+	if t == "boltc" {
 		wg.Add(1)
-	} else if app == "boltl" {
+	} else if t == "boltl" {
 		wg.Add(father + 1)
 	}
 	
