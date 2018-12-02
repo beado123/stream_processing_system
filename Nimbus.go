@@ -100,7 +100,7 @@ func writeToPinger(machineNum string, content string) {
 		}
 	//write updated membership list to other machines
 	} else {
-		port := "3333"
+		port := "3322"
 		if content[0:4] == "DOWN" {
 			port = "4444"
 		}
@@ -234,7 +234,7 @@ func sendMembershipListToPinger() {
 func responsePing(machine string) {
 
 	fmt.Fprintln(logWriter, "===response ping", "machine", machine)
-	conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:3333")
+	conn, err := net.Dial("udp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:3322")
 	checkErr(err)
 	_, err = conn.Write([]byte("ACK "+ self))
 	checkErr(err)
@@ -334,7 +334,7 @@ func startIntroducer() {
 	ips = make(map[string]string)
 
 	addr := net.UDPAddr{
-		Port: 3333,
+		Port: 3322,
 		IP: net.ParseIP(ip),
 	}
 	
@@ -656,7 +656,7 @@ func sendJobToSpout(spout string, bolts []string) {
 }
 
 func tcpDial(machine string, out string) {
-	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8000")
+	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8080")
 	checkErr(err)
 	_, err = conn.Write([]byte(out))
 	checkErr(err)
@@ -672,12 +672,12 @@ func startNimbus() {
 	//get ip address from servers list	
 	ip := getIPAddr()
 	//listen for incoming connections
-	l, err := net.Listen("tcp", ip + ":8000")
+	l, err := net.Listen("tcp", ip + ":8080")
 	printErr(err, "listening")
 	
 	//close the listener when app closes
 	defer l.Close()
-	fmt.Println("Nimbus Listening on port 8000")
+	fmt.Println("Nimbus Listening on port 8080")
 	fmt.Println("l", l)
 
 	//Listen for incoming connections
