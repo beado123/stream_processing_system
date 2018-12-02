@@ -120,7 +120,7 @@ func (self *Bolt) BoltListen() {
 		}
 	//}
 	if self.Type == "boltl" {
-		wg.Wait()
+		//wg.Wait()
 	}
 	fmt.Println("bolt listen shut down")
 }
