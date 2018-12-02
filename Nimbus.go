@@ -288,7 +288,7 @@ func parseUDPRequest(buf []byte, length int) {
 		removeFromList(machine)
 		sendMembershipListToPinger()
 		broadcast("DOWN", machine)
-		time.Sleep(time.Millisecond* 1000)
+		time.Sleep(time.Millisecond* 10)
 		//delete crashed machine from membership list
 		//reassignFilesToOtherVM(machine)
 		fmt.Println("updated membership list:",lst)	
