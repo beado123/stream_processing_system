@@ -32,11 +32,15 @@ type Bolt struct {
 	FilterRedditMap map[string]int
 }
 
-//global 
-var keep bool
+var wg sync.WaitGroup
 
 func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
-	keep = true
+	if app == "boltc" {
+		wg.Add(1)
+	} else if app == "boltl" {
+		wg.Add(father + 1)
+	}
+	
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
 	l, err := net.Listen("tcp", ip_address + ":5555")
@@ -84,46 +88,34 @@ func (self *Bolt) BoltListen() {
         }
 
 	count := self.NumOfFather
-	var conn net.Conn
 	for true {
-		conn1, err := self.Ln.Accept()
+		if count == 0 {
+			break
+		}
+		conn, err := self.Ln.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		if count == 1{
-			conn = conn1
-			break
-		} else {
-			if self.Type == "boltc" && self.App == "wordcount" {
-	                        go self.HandleWordCountBoltc(conn1)
-        	        } else if self.Type == "boltl" && self.App == "wordcount" {
-                	        go self.HandleWordCountBoltl(conn1)
-                	} else if self.Type == "boltc" && self.App == "reddit" {
-                        	go self.HandleFilterRedditBoltc(conn1)
-                	} else if self.Type == "boltl" && self.App == "reddit" {
-                        	go self.HandleFilterRedditBoltl(conn1)
-                	}
-			count -= 1
-		}
-	}
 		if self.Type == "boltc" && self.App == "wordcount" {
-			self.HandleWordCountBoltc(conn)
-		} else if self.Type == "boltl" && self.App == "wordcount" {
-			self.HandleWordCountBoltl(conn)
-		} else if self.Type == "boltc" && self.App == "reddit" {
-			self.HandleFilterRedditBoltc(conn)
-		} else if self.Type == "boltl" && self.App == "reddit" {
-			self.HandleFilterRedditBoltl(conn)
-		}
-	//}
+                	go self.HandleWordCountBoltc(conn)
+                } else if self.Type == "boltl" && self.App == "wordcount" {
+                	go self.HandleWordCountBoltl(conn)
+                } else if self.Type == "boltc" && self.App == "reddit" {
+                	go self.HandleFilterRedditBoltc(conn)
+                } else if self.Type == "boltl" && self.App == "reddit" {
+                	go self.HandleFilterRedditBoltl(conn)
+                }
+		count -= 1
+	}
+	wg.Wait()
 	fmt.Println("bolt listen shut down")
 }
 
 func (self *Bolt) BoltListenForDOWN() {
 	defer self.Ser.Close();
 	buf := make([]byte, 1024)
-	//fmt.Println("hello")
+	
 	for true {
 		reqLen, _, err := self.Ser.ReadFromUDP(buf)
 		if err != nil {
@@ -133,9 +125,19 @@ func (self *Bolt) BoltListenForDOWN() {
 		reqArr := strings.Split(string(buf[:reqLen]), " ")
 		msg := reqArr[0]
 		if(msg == "DOWN") {
-			self.IsActive = false
-			keep = false
 			fmt.Println("Receive DOWN, need to shut down!")
+			if self.Type == "boltc" {
+				wg.Done()
+			} else if self.Type == "boltl" {
+				count := self.NumOfFather + 1
+				for true {
+					if count == 0 {
+						break
+					}
+					wg.Done()
+					count -= 1
+				}
+			}
 			break
 		}
 	}
@@ -183,12 +185,10 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 	}
 
 	for true {
-		if self.IsActive == false || keep == false{
-                        break
-                }
 		bufferSize := make([]byte, 32)
 		_, err := conn.Read(bufferSize)
                 if err != nil {
+			wg.Done()
                         fmt.Println(err)
                         return
                 }
@@ -198,6 +198,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 			for _, curr := range self.ConnToChildren {
 				curr.Write([]byte(fillString("END", 32)))
 			}
+			wg.Done()
 			break
 		}
 		num, _ := strconv.Atoi(tupleSize)
@@ -231,13 +232,11 @@ func (self *Bolt) SendToChildren(out map[string]string) {
 func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
         defer conn.Close()
         for true {
-		if self.IsActive == false || keep == false{
-                        break
-                }
 		bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
 			fmt.Println(err)
+			wg.Done()
 			break
 		}
 
@@ -245,7 +244,8 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 		fmt.Println(tupleSize)
 		if tupleSize == "END" {
 			self.NumOfFather -= 1
-			fmt.Println(self.NumOfFather)
+			//fmt.Println(self.NumOfFather)
+			wg.Done()
                 	break
                 }
                 num, _ := strconv.Atoi(tupleSize)
@@ -262,9 +262,6 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
 
 func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 	for true {
-		if self.IsActive == false || keep == false{
-                        break
-                }
 		if self.NumOfFather == 0 {
 			self.WriteIntoFileWordCount()
 			break
@@ -276,6 +273,7 @@ func (self *Bolt) WordCountBoltlTimeToExitCheck() {
 func (self *Bolt) WriteIntoFileWordCount() {
 	newFile, err := os.Create("local/" + self.App)
 	if err != nil {
+		wg.Done()
 		fmt.Println(err)
 	}
 	defer newFile.Close()
@@ -283,6 +281,7 @@ func (self *Bolt) WriteIntoFileWordCount() {
 		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count) + "\n")
 	}
 	fmt.Println("==Successfully write wordcount file!==")
+	wg.Done()
 }
 
 //reddit//
@@ -299,13 +298,11 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
         }
 
         for true {
-		if self.IsActive == false || keep == false{
-			break
-		}
                 bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
                         fmt.Println(err)
+			wg.Done()
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
@@ -314,6 +311,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
                         for _, curr := range self.ConnToChildren {
                                 curr.Write([]byte(fillString("END", 32)))
                         }
+			wg.Done()
                         break
                 }
                 num, _ := strconv.Atoi(tupleSize)
@@ -333,19 +331,18 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
 func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 	defer conn.Close()
         for true {
-		if self.IsActive == false || keep == false{
-                	break
-                }
                 bufferSize := make([]byte, 32)
                 _, err := conn.Read(bufferSize)
                 if err != nil {
                         fmt.Println(err)
+			wg.Done()
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
                 //fmt.Println(tupleSize)
                 if tupleSize == "END" {
                         self.NumOfFather -= 1
+			wg.Done()
                         break
                 }
 
@@ -363,9 +360,6 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
 
 func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
         for true {
-		if self.IsActive == false || keep == false{
-                        break
-                }
                 if self.NumOfFather == 0 {
                         self.WriteIntoFileFilterReddit()
                         break
@@ -377,6 +371,7 @@ func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
 func (self *Bolt) WriteIntoFileFilterReddit() {
 	newFile, err := os.Create("local/" + self.App)
         if err != nil {
+		wg.Done()
                 fmt.Println(err)
         }
         defer newFile.Close()
@@ -389,6 +384,7 @@ func (self *Bolt) WriteIntoFileFilterReddit() {
                 fmt.Fprintf(newFile, curr.Key + ":" + strconv.Itoa(curr.Value) + "\n")
         }
         fmt.Println("==Successfully write wordcount file!==")
+	wg.Done()
 }
 
 func rankByWordCount(wordFrequencies map[string]int) PairList{
