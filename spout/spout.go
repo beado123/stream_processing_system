@@ -488,7 +488,7 @@ func (self *Spout) Start() {
 			} else {
 				index += 1
 			}
-			//time.Sleep(time.Millisecond* 50)
+			time.Sleep(time.Millisecond* 10)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
