@@ -411,7 +411,7 @@ func reassignFilesToOtherVM(machine string) {
 		}
 		//append new VM to file vm group
 		m[oneFile] = append(m[oneFile], lst[newVm])
-		conn, err := net.Dial("tcp", fmt.Sprintf("%s%s%s", "fa18-cs425-g69-", m[oneFile][0], ".cs.illinois.edu:6666"))
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s%s%s", "fa18-cs425-g69-", m[oneFile][0], ".cs.illinois.edu:6677"))
 		checkErr(err)
 		_, err = conn.Write([]byte("failfail"))
 		_, err = conn.Write([]byte(oneFile + "\n" + lst[newVm]))
@@ -577,12 +577,12 @@ func startMaster() {
 	ip := getIPAddr()
 	selfMachineNum = ip[15:17]
 	//listen for incoming connections
-	l, err := net.Listen("tcp", ip + ":6666")
+	l, err := net.Listen("tcp", ip + ":6677")
 	printErr(err, "listening")
 	
 	//close the listener when app closes
 	defer l.Close()
-	fmt.Println("Master Listening on port 6666")
+	fmt.Println("Master Listening on port 6677")
 
 	//Listen for incoming connections
 	for {
