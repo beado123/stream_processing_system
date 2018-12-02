@@ -634,9 +634,6 @@ func sendJobToWorker() {
 	fmt.Println("bolts", bolts)
 	fmt.Println("boltl", lst[numOfWorker-1])
 	resultCollector := lst[numOfWorker-1]
-
-	//send job to spout
-	sendJobToSpout(lst[0], bolts)
 	
 	//send job to boltc
 	for _, bolt := range bolts {
@@ -644,6 +641,9 @@ func sendJobToWorker() {
 	}
 	//send job to boltl
 	tcpDial(resultCollector, "boltl " + app + " " + strconv.Itoa(len(bolts)))
+
+	//send job to spout
+	sendJobToSpout(lst[0], bolts)
 }
 
 func sendJobToSpout(spout string, bolts []string) {
