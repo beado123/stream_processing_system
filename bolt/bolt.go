@@ -30,7 +30,8 @@ type Bolt struct {
 	ConnToChildren map[string]net.Conn
 	NumOfFather int
 	FilterRedditMap map[string]int
-	NasaLogMap map[string]map[string]int
+	NasaLogMap map[string]int
+	NasaLogMap2 map[string][]string
 }
 
 var wg sync.WaitGroup
@@ -75,7 +76,8 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 		ConnToChildren: make(map[string]net.Conn),
 		NumOfFather: father,
 		FilterRedditMap: make(map[string]int),
-		NasaLogMap: make(map[string]map[string]int),
+		NasaLogMap: make(map[string]int),
+		NasaLogMap2: make(map[string][]string),
 	}
 	return
 }
@@ -520,11 +522,13 @@ func (self *Bolt) WriteIntoFileNasaLog() {
 		fmt.Println(err)
 	}
 	defer newFile.Close()
-	for host, _ := range self.NasaLogMap {
-		fmt.Fprintf(newFile, host + ":\n")
-		for route, count := range self.NasaLogMap[host] {
-			fmt.Fprintf(newFile, route + ":" + strconv.Itoa(count) + "\n")
+
+	for host, count := range self.NasaLogMap {	
+		fmt.Fprintf(newFile, host + ":" + strconv.Itoa(count) + "\n")
+		for _, curr := range self.NasaLogMap2[host] {
+			fmt.Fprintf(newFile, curr + "\n")
 		}
+		fmt.Fprintf(newFile, "===========================================\n")
 	}
 	fmt.Println("==Successfully write wordcount file!==")
 	wg.Done()
@@ -597,14 +601,21 @@ func (self *Bolt) NasaLogSecond(in map[string]string) {
         route := in["route"]
 	self.MyMutex.Lock()
 	if _, ok := self.NasaLogMap[host]; ok {
-        	if _, ok := self.NasaLogMap[host][route]; ok {
-                	self.NasaLogMap[host][route] += 1
-		} else {
-			self.NasaLogMap[host][route] = 1
+		self.NasaLogMap[host] += 1
+	} else {
+		self.NasaLogMap[host] = 1
+	}
+	
+	check := 0
+	for _, curr := range self.NasaLogMap2[host] {
+		if curr == route {
+			check = 1
+			break
 		}
-        } else {
-        	self.NasaLogMap[host][route] = 1	
-        }
+	}
+	if check == 0 {
+		self.NasaLogMap2[host] = append(self.NasaLogMap2[host], route)
+	}
 	self.MyMutex.Unlock()
 }
 
