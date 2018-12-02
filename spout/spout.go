@@ -427,6 +427,13 @@ func (self *Spout) Start() {
 			connMap[vm] = conn
 		}
 		for self.Scanner.Scan() {
+
+			fmt.Fprintln(logWriter, "quit", quit)
+			if quit == false {
+				fmt.Println("Quit Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
+				return
+			}
 			fmt.Println("index", index)
 			self.LineNum += 1
 			emit := make(map[string]string)
