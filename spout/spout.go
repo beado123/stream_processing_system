@@ -435,11 +435,15 @@ func (self *Spout) Start() {
 				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
 				return
 			}
-			fmt.Println("index", index)
+			//fmt.Println("index", index)
 			self.LineNum += 1
+			fmt.Println("line number", self.LineNum)
 			line := self.Scanner.Text()
 			arr := strings.Fields(line)
 			emit := make(map[string]string)
+			if len(arr) < 9 {
+				continue
+			}
 			emit["host"] = arr[0]
 			emit["request"] = arr[5][1:]
 			emit["url"] = arr[6]
