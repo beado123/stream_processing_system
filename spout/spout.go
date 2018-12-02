@@ -243,7 +243,7 @@ func (self *Spout) Start() {
 				index += 1
 			}
 			fmt.Fprintln(logWriter, "one iteration ends")
-			time.Sleep(time.Millisecond* 50)
+			//time.Sleep(time.Millisecond* 50)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
@@ -488,7 +488,7 @@ func (self *Spout) Start() {
 			} else {
 				index += 1
 			}
-			time.Sleep(time.Millisecond* 10)
+			time.Sleep(time.Microsecond * 100)
 		}
 		fmt.Println("==========File End==========")
 		for _, vm := range self.Children {
