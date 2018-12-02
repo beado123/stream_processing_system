@@ -206,7 +206,7 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		num, _ := strconv.Atoi(tupleSize)
 		bufferTuple := make([]byte, num)
 		conn.Read(bufferTuple)
-		//fmt.Println(string(bufferTuple))
+		fmt.Println(string(bufferTuple))
 		var in map[string]string
 		json.Unmarshal(bufferTuple, &in)
 		//filter http and 2008
