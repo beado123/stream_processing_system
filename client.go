@@ -20,7 +20,7 @@ func main() {
 	appMap = make(map[string]string)
 	appMap["wordcount"] = "./wordcount_dataset"
 	appMap["reddit"] = "./reddit_dataset.csv"
-	appMap["nasalog"] = "./nasalog_dataset"
+	appMap["nasalog"] = "./nasalog_dataset_50mb"
 
 	if len(os.Args) < 2 {
 		fmt.Println("Please type in master id!")
@@ -69,7 +69,7 @@ func main() {
 			} else if strings.Contains(cmd, "store") {
 				d.StoreRequest()
 			} else if strings.Contains(cmd, "wordcount")|| strings.Contains(cmd, "reddit") {
-				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:8000")
+				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:8080")
 	        		if err != nil {
         		        	fmt.Println(err)
         			}
@@ -85,7 +85,7 @@ func main() {
 //port number 8000
 func ListenFromNimbus() {
 	ip_address := getIPAddrAndLogfile()
-	l, err := net.Listen("tcp", ip_address + ":8000")
+	l, err := net.Listen("tcp", ip_address + ":8080")
 	if err != nil {
 		fmt.Println(err)
                 return
