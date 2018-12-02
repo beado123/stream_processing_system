@@ -36,13 +36,13 @@ type Daemon struct {
 func NewDaemon(id string) (d *Daemon, err error) {
 	ip_address := getIPAddrAndLogfile()
 	vm_id := ip_address[15:17]
-	l, err := net.Listen("tcp", ip_address + ":6666")
+	l, err := net.Listen("tcp", ip_address + ":6677")
 	if err != nil {
 		fmt.Println(err)
                 return
 	}
 	addr := net.UDPAddr{
-        	Port: 3333,
+        	Port: 3322,
         	IP: net.ParseIP(ip_address),
     	}
 	ser, err := net.ListenUDP("udp", &addr)
@@ -56,9 +56,9 @@ func NewDaemon(id string) (d *Daemon, err error) {
 		VmId: vm_id,
 		VmIpAddress: ip_address,
 		Ln: l,
-		PortTCP: "6666",
+		PortTCP: "6677",
 		Ser: ser,
-		PortUDP: "3333",
+		PortUDP: "3322",
 		MembershipList: make(map[string]*Node),
 		IsActive: true,
 		Master: master,
