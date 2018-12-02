@@ -346,9 +346,10 @@ func (self *Spout) Open() {
 	} else if self.App == "reddit" {
 		reader := csv.NewReader(bufio.NewReader(file))
 		self.Reader = reader
+	} else if self.App == "nasalog" {
+		scanner := bufio.NewScanner(file)
+		self.Scanner = scanner
 	}
-	
-	
 }
 
 func SendToBolt(machine string, jsonStr string) {
@@ -413,7 +414,51 @@ func (self *Spout) Start() {
 	quit = true
 
 	go self.listenFromNimbus()
-	if(self.App == "wordcount"){
+	if self.App == "nasalog" {
+
+		index := 0
+		length := len(self.Children)
+		connMap = make(map[string]net.Conn)
+		time.Sleep(time.Millisecond* 1000)
+		for _, vm := range self.Children {
+			fmt.Println("vm", vm)
+			conn, err := net.Dial("tcp", "fa18-cs425-g69-" + vm + ".cs.illinois.edu:5555")
+			fmt.Println("conn", conn)
+			checkErr(err)
+			connMap[vm] = conn
+		}
+		for self.Scanner.Scan() {
+
+			fmt.Fprintln(logWriter, "quit", quit)
+			if quit == false {
+				fmt.Println("Quit Spout detected failure! Drop task...")
+				fmt.Fprintln(logWriter, "Spout detected failure! Drop task...")
+				return
+			}
+			fmt.Println("index", index)
+			self.LineNum += 1
+			line := self.Scanner.Text()
+			arr := strings.Fields(line)
+			emit := make(map[string]string)
+			emit["host"] = arr[0]
+			emit["request"] = arr[5][1:]
+			emit["url"] = arr[6]
+			emit["status"] = arr[8] 
+			Encode(self.Children[index], emit)
+			if index == length -1 {
+				index = 0
+			} else {
+				index += 1
+			}
+		}
+		fmt.Println("==========File End==========")
+		for _, vm := range self.Children {
+			len, err := connMap[vm].Write([]byte(fillString("END", 32)))
+			checkErr(err)
+			fmt.Println("Wrote", len, "bytes")
+		}
+		
+	} else if(self.App == "wordcount"){
 
 		index := 0
 		length := len(self.Children)
