@@ -212,6 +212,9 @@ func (self *Bolt) HandleWordCountBoltc(conn net.Conn) {
 		//filter http and 2008
 		sentence := in["line"]
         	words := strings.Split(sentence, " ")
+		if len(words) == 0 {
+			continue
+		}
 		if len(words[0]) > 8 {
 			if words[0][0:4] == "http" || words[0][0:4] == "2008" {
 				continue
