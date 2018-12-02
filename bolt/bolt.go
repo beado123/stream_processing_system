@@ -109,7 +109,11 @@ func (self *Bolt) BoltListen() {
                 	go self.HandleFilterRedditBoltc(conn)
                 } else if self.Type == "boltl" && self.App == "reddit" {
                 	go self.HandleFilterRedditBoltl(conn)
-                }
+                } else if self.Type == "boltc" && self.App == "nasalog" {
+			go self.HandleNasaLogBoltc(conn)
+		} else if self.Type == "boltl" && self.App == "nasalog" {
+			go self.HandleNasaLogBoltl(conn)
+		}
 		count -= 1
 	}
 	wg.Wait()
