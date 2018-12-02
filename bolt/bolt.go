@@ -30,6 +30,7 @@ type Bolt struct {
 	ConnToChildren map[string]net.Conn
 	NumOfFather int
 	FilterRedditMap map[string]int
+	NasaLogMap map[string]map[string]int
 }
 
 var wg sync.WaitGroup
@@ -74,6 +75,7 @@ func NewBolt(t string, app string, children []string, father int) (b *Bolt) {
 		ConnToChildren: make(map[string]net.Conn),
 		NumOfFather: father,
 		FilterRedditMap: make(map[string]int),
+		NasaLogMap: make(map[string]map[string]int),
 	}
 	return
 }
@@ -85,7 +87,9 @@ func (self *Bolt) BoltListen() {
 		go self.WordCountBoltlTimeToExitCheck()
 	} else if self.Type == "boltl" && self.App == "reddit" {
                 go self.FilterRedditBoltlTimeToExitCheck()
-        }
+        } else if self.Type == "boltl" && self.App == "nasalog" {
+		go self.NasaLogBoltlTimeToExitCheck()
+	}
 
 	count := self.NumOfFather
 	for true {
@@ -424,6 +428,104 @@ type PairList []Pair
 func (p PairList) Len() int { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int){ p[i], p[j] = p[j], p[i] }
+
+//////////////////////////////////////////////////nasan log///////////////////////////////////////////////////////////////
+func (self *Bolt) HandleNasaLogBoltc(conn net.Conn) {
+	defer conn.Close()
+        //set up connection to children
+        for _, child := range self.Children {
+                connToChild, err := net.Dial("tcp", "fa18-cs425-g69-" + child + ".cs.illinois.edu:" + self.PortTCP)
+                if err != nil {
+                        fmt.Println(err)
+                        return
+                }
+                self.ConnToChildren[child] = connToChild
+        }
+
+        for true {
+                bufferSize := make([]byte, 32)
+                _, err := conn.Read(bufferSize)
+                if err != nil {
+                        fmt.Println(err)
+                        break
+                }
+                tupleSize := strings.Trim(string(bufferSize), ":")
+                //fmt.Println(tupleSize)
+                if tupleSize == "END" {
+                        for _, curr := range self.ConnToChildren {
+                                curr.Write([]byte(fillString("END", 32)))
+                        }
+                        wg.Done()
+                        break
+                }
+                num, _ := strconv.Atoi(tupleSize)
+                bufferTuple := make([]byte, num)
+                conn.Read(bufferTuple)
+                fmt.Println(string(bufferTuple))
+                var in map[string]string
+                json.Unmarshal(bufferTuple, &in)
+                if in["status"] != "200" {
+			continue
+		}
+		out := self.NasaLogFirst(in)
+                self.SendToChildren(out)
+        }
+}
+
+func (self *Bolt) HandleNasaLogBoltl(conn net.Conn) {
+	defer conn.Close()
+        for true {
+                bufferSize := make([]byte, 32)
+                _, err := conn.Read(bufferSize)
+                if err != nil {
+                        fmt.Println(err)
+                        break
+                }
+                tupleSize := strings.Trim(string(bufferSize), ":")
+                if tupleSize == "END" {
+                        self.NumOfFather -= 1
+			wg.Done()
+                        break
+                }
+                num, _ := strconv.Atoi(tupleSize)
+                bufferTuple := make([]byte, num)
+                conn.Read(bufferTuple)
+                var in map[string]string
+                json.Unmarshal(bufferTuple, &in)
+                for key, value := range in {
+                        fmt.Println(key, value)
+                }
+                self.NasaLogSecond(in)
+        }	
+}
+
+func (self *Bolt) NasaLogBoltlTimeToExitCheck() {
+        for true {
+                if self.NumOfFather == 0 {
+                        self.WriteIntoFileNasaLog()
+                        break
+                }
+                time.Sleep(time.Millisecond * 500)
+        }
+}
+
+func (self *Bolt) WriteIntoFileNasaLog() {
+	newFile, err := os.Create("local/" + self.App)
+	if err != nil {
+		wg.Done()
+		fmt.Println(err)
+	}
+	defer newFile.Close()
+	for host, _ := range self.NasaLogMap {
+		fmt.Fprintf(newFile, host + ":\n")
+		for route, count := range self.NasaLogMap[host] {
+			fmt.Fprintf(newFile, route + ":" + strconv.Itoa(count) + "\n")
+		}
+	}
+	fmt.Println("==Successfully write wordcount file!==")
+	wg.Done()
+}
+
 //////////////////////////////////////////////////apps////////////////////////////////////////////////////////////////////
 func (self *Bolt) WordCountFirst(in map[string]string) map[string]string {
 	linenumber := in["linenumber"]
@@ -477,5 +579,28 @@ func (self *Bolt) FilterRedditSecond(in map[string]string) {
 	self.MyMutex.Unlock()
 }
 
+func (self *Bolt) NasaLogFirst(in map[string]string) map[string]string {
+	host := in["host"]
+	url := in["url"]
+	out := make(map[string]string)
+	out["host"] = host
+	out["route"] = host + url
+	return out
+}
 
+func (self *Bolt) NasaLogSecond(in map[string]string) {
+	host := in["host"]
+        route := in["route"]
+	self.MyMutex.Lock()
+	if _, ok := self.NasaLogMap[host]; ok {
+        	if _, ok := self.NasaLogMap[host][route]; ok {
+                	self.NasaLogMap[host][route] += 1
+		} else {
+			self.NasaLogMap[host][route] = 1
+		}
+        } else {
+        	self.NasaLogMap[host][route] = 1	
+        }
+	self.MyMutex.Unlock()
+}
 
