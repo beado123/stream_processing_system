@@ -445,6 +445,7 @@ func (self *Spout) Start() {
 				continue
 			}
 			emit["host"] = arr[0]
+			emit["date"] = arr[3][1:3]
 			emit["request"] = arr[5][1:]
 			emit["url"] = arr[6]
 			emit["status"] = arr[8] 
