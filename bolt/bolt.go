@@ -134,6 +134,7 @@ func (self *Bolt) BoltListenForDOWN() {
 					if count == 0 {
 						break
 					}
+					fmt.Println("hello")
 					wg.Done()
 					count -= 1
 				}
@@ -302,7 +303,7 @@ func (self *Bolt) HandleFilterRedditBoltc(conn net.Conn) {
                 _, err := conn.Read(bufferSize)
                 if err != nil {
                         fmt.Println(err)
-			wg.Done()
+			//wg.Done()
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
@@ -335,13 +336,15 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
                 _, err := conn.Read(bufferSize)
                 if err != nil {
                         fmt.Println(err)
-			wg.Done()
+			//fmt.Println("here1")
+			//wg.Done()
                         break
                 }
                 tupleSize := strings.Trim(string(bufferSize), ":")
                 //fmt.Println(tupleSize)
                 if tupleSize == "END" {
                         self.NumOfFather -= 1
+			fmt.Println("here2")
 			wg.Done()
                         break
                 }
@@ -371,6 +374,7 @@ func (self *Bolt) FilterRedditBoltlTimeToExitCheck() {
 func (self *Bolt) WriteIntoFileFilterReddit() {
 	newFile, err := os.Create("local/" + self.App)
         if err != nil {
+		fmt.Println("here3")
 		wg.Done()
                 fmt.Println(err)
         }
@@ -385,6 +389,7 @@ func (self *Bolt) WriteIntoFileFilterReddit() {
         }
         fmt.Println("==Successfully write wordcount file!==")
 	wg.Done()
+	fmt.Println("here4")
 }
 
 func rankByWordCount(wordFrequencies map[string]int) PairList{
