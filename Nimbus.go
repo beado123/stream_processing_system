@@ -656,7 +656,7 @@ func sendJobToSpout(spout string, bolts []string) {
 }
 
 func tcpDial(machine string, out string) {
-	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8000")
+	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8080")
 	checkErr(err)
 	_, err = conn.Write([]byte(out))
 	checkErr(err)
@@ -672,12 +672,12 @@ func startNimbus() {
 	//get ip address from servers list	
 	ip := getIPAddr()
 	//listen for incoming connections
-	l, err := net.Listen("tcp", ip + ":8000")
+	l, err := net.Listen("tcp", ip + ":8080")
 	printErr(err, "listening")
 	
 	//close the listener when app closes
 	defer l.Close()
-	fmt.Println("Nimbus Listening on port 8000")
+	fmt.Println("Nimbus Listening on port 8080")
 	fmt.Println("l", l)
 
 	//Listen for incoming connections
