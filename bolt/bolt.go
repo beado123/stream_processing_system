@@ -354,9 +354,9 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)
                 var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-                /*for key, value := range in {
+                for key, value := range in {
                         fmt.Println(key, value)
-                }*/
+                }
                 self.FilterRedditSecond(in)
         }
 }
