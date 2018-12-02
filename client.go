@@ -68,7 +68,7 @@ func main() {
 				d.SendLsRequest(cmd)
 			} else if strings.Contains(cmd, "store") {
 				d.StoreRequest()
-			} else if strings.Contains(cmd, "wordcount")|| strings.Contains(cmd, "reddit") {
+			} else if strings.Contains(cmd, "wordcount")|| strings.Contains(cmd, "reddit") || strings.Contains(cmd, "nasalog"){
 				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:8080")
 	        		if err != nil {
         		        	fmt.Println(err)
