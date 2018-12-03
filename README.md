@@ -7,7 +7,7 @@
  ## To Start other machines
  ```
  go build client.go
- ./client id_of_nimbus
+ ./client <id_of_nimbus>
  ```
  ## After runing server/client
  ## To print the membership list
