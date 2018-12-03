@@ -11,6 +11,7 @@ import (
 	"net"
 	"io/ioutil"
 	"strconv"
+	"time"
 )
 var appMap map[string]string
 
@@ -69,6 +70,8 @@ func main() {
 			} else if strings.Contains(cmd, "store") {
 				d.StoreRequest()
 			} else if strings.Contains(cmd, "wordcount")|| strings.Contains(cmd, "reddit") || strings.Contains(cmd, "nasalog"){
+				start := time.Now()
+				fmt.Println(start)
 				conn, err := net.Dial("tcp", "fa18-cs425-g69-" + master_id + ".cs.illinois.edu:8080")
 	        		if err != nil {
         		        	fmt.Println(err)
