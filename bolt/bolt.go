@@ -276,9 +276,9 @@ func (self *Bolt) HandleWordCountBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)		
 		var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-		for key, value := range in {
+		/*for key, value := range in {
                         fmt.Println(key, value)
-                }
+                }*/
 		self.WordCountSecond(in)
 	}
 }
@@ -304,6 +304,8 @@ func (self *Bolt) WriteIntoFileWordCount() {
 		fmt.Fprintf(newFile, word + ":" + strconv.Itoa(count) + "\n")
 	}
 	fmt.Println("==Successfully write wordcount file!==")
+	end := time.Now()
+	fmt.Println(end)
 	wg.Done()
 }
 
@@ -376,9 +378,9 @@ func (self *Bolt) HandleFilterRedditBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)
                 var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-                for key, value := range in {
+                /*for key, value := range in {
                         fmt.Println(key, value)
-                }
+                }*/
                 self.FilterRedditSecond(in)
         }
 }
@@ -409,7 +411,9 @@ func (self *Bolt) WriteIntoFileFilterReddit() {
 		}
                 fmt.Fprintf(newFile, curr.Key + ":" + strconv.Itoa(curr.Value) + "\n")
         }
-        fmt.Println("==Successfully write wordcount file!==")
+        fmt.Println("==Successfully write filter reddit file!==")
+	end := time.Now()
+        fmt.Println(end)
 	wg.Done()
 	fmt.Println("here4")
 }
@@ -498,9 +502,9 @@ func (self *Bolt) HandleNasaLogBoltl(conn net.Conn) {
                 conn.Read(bufferTuple)
                 var in map[string]string
                 json.Unmarshal(bufferTuple, &in)
-                for key, value := range in {
+                /*for key, value := range in {
                         fmt.Println(key, value)
-                }
+                }*/
                 self.NasaLogSecond(in)
         }	
 }
@@ -530,7 +534,9 @@ func (self *Bolt) WriteIntoFileNasaLog() {
 		}
 		fmt.Fprintf(newFile, "===========================================\n")
 	}
-	fmt.Println("==Successfully write wordcount file!==")
+	fmt.Println("==Successfully write nasalog file!==")
+	end := time.Now()
+        fmt.Println(end)
 	wg.Done()
 }
 
