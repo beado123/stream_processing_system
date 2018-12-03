@@ -624,6 +624,7 @@ func parseRequestNimbus(conn net.Conn) {
 	conn.Close()
 }
 
+//This function 
 func sendJobToWorker() {
 
 	var bolts []string	
@@ -646,6 +647,7 @@ func sendJobToWorker() {
 	sendJobToSpout(lst[0], bolts)
 }
 
+//This function sends topology name to spout and bolts
 func sendJobToSpout(spout string, bolts []string) {
 	out := "spout " + app + " "
 	for _, elem := range bolts {
@@ -655,6 +657,7 @@ func sendJobToSpout(spout string, bolts []string) {
 	tcpDial(spout, out)
 }
 
+//This function dials other VM and sends output
 func tcpDial(machine string, out string) {
 	conn, err := net.Dial("tcp", "fa18-cs425-g69-" + machine + ".cs.illinois.edu:8080")
 	checkErr(err)
@@ -662,7 +665,7 @@ func tcpDial(machine string, out string) {
 	checkErr(err)
 }
 
-//This function starts the master and listens for incoming tcp connection
+//This function starts Nimbuus and listens for incoming topology
 func startNimbus() {
 
 	pointer = -1
