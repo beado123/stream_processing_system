@@ -1,4 +1,4 @@
-# MP3_CS425
+# Crane: a stream processing system
 
  ## To Start Nimbus
  ```
